@@ -1,17 +1,212 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HRS Rail Weekly Timesheet</title><style>
-*{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:Arial,sans-serif;color:#17202a}.wrap{max-width:720px;margin:auto;padding:16px}.head{background:#161b22;color:white;padding:22px;border-radius:16px;margin-bottom:14px}.head b{font-size:27px}.head div{opacity:.85;margin-top:4px}.card{background:white;padding:18px;border-radius:16px;margin:12px 0;box-shadow:0 2px 10px #0000000c}h2{font-size:18px;margin:0 0 14px}label{font-weight:700;font-size:13px;display:block;margin:12px 0 6px}input,textarea{width:100%;font-size:16px;padding:13px;border:1px solid #c9d0d7;border-radius:10px;background:white}textarea{min-height:70px}.choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}.choice input{display:none}.choice span{display:block;text-align:center;padding:12px;border:1px solid #bbc3ca;border-radius:10px;font-weight:700}.choice input:checked+span{background:#17202a;color:white;border-color:#17202a}.yn{display:grid;grid-template-columns:1fr 70px 70px;align-items:center;gap:7px;margin:10px 0}.yn b{font-size:14px}.yn label{margin:0}.yn input{display:none}.yn span{display:block;text-align:center;padding:10px;border:1px solid #bbc3ca;border-radius:9px;font-weight:700}.yn input:checked+span{background:#17202a;color:white}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.shiftTitle{display:flex;justify-content:space-between;align-items:center}.remove{border:0;background:#eee;padding:8px 10px;border-radius:8px}.add,.submit{width:100%;padding:15px;border:0;border-radius:11px;font-weight:800;font-size:16px}.add{background:#e8ebee}.submit{background:#18864b;color:white;margin-top:12px}.notice{font-size:13px;background:#fff6d9;padding:12px;border-radius:10px}.error{color:#b42318;font-weight:700;font-size:14px;margin-top:10px}.deadline{font-size:13px;margin-top:12px;color:#dce3e9}.confirm{display:flex;gap:10px;align-items:flex-start}.confirm input{width:auto;margin-top:3px}@media(max-width:500px){.wrap{padding:10px}.card{padding:15px}.row{grid-template-columns:1fr 1fr}.yn{grid-template-columns:1fr 62px 62px}}
+*{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:Arial,sans-serif;color:#17202a}.wrap{max-width:720px;margin:auto;padding:16px}.head{background:#161b22;color:white;padding:22px;border-radius:16px;margin-bottom:14px}.head b{font-size:27px}.head div{opacity:.85;margin-top:4px}.card{background:white;padding:18px;border-radius:16px;margin:12px 0;box-shadow:0 2px 10px #0000000c}h2{font-size:18px;margin:0 0 14px}label{font-weight:700;font-size:13px;display:block;margin:12px 0 6px}input,textarea{width:100%;font-size:16px;padding:13px;border:1px solid #c9d0d7;border-radius:10px;background:white}textarea{min-height:70px}.choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}.choice input{display:none}.choice span{display:block;text-align:center;padding:12px;border:1px solid #bbc3ca;border-radius:10px;font-weight:700}.choice input:checked+span{background:#17202a;color:white;border-color:#17202a}.yn{display:grid;grid-template-columns:1fr 70px 70px;align-items:center;gap:7px;margin:10px 0}.yn b{font-size:14px}.yn label{margin:0}.yn input{display:none}.yn span{display:block;text-align:center;padding:10px;border:1px solid #bbc3ca;border-radius:9px;font-weight:700}.yn input:checked+span{background:#17202a;color:white}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.shiftTitle{display:flex;justify-content:space-between;align-items:center}.remove{border:0;background:#eee;padding:8px 10px;border-radius:8px}.add,.submit{width:100%;padding:15px;border:0;border-radius:11px;font-weight:800;font-size:16px}.add{background:#e8ebee}.submit{background:#18864b;color:white;margin-top:12px}.submit:disabled{opacity:.65}.notice{font-size:13px;background:#fff6d9;padding:12px;border-radius:10px}.error{color:#b42318;font-weight:700;font-size:14px;margin-top:10px}.deadline{font-size:13px;margin-top:12px;color:#dce3e9}.confirm{display:flex;gap:10px;align-items:flex-start}.confirm input{width:auto;margin-top:3px}@media(max-width:500px){.wrap{padding:10px}.card{padding:15px}.row{grid-template-columns:1fr 1fr}.yn{grid-template-columns:1fr 62px 62px}}
 </style></head><body><div class="wrap"><div class="head"><b>HRS RAIL</b><div>Weekly Timesheet</div><div class="deadline" id="payInfo"></div></div>
+
 <form id="form"><div class="card"><h2>Operative Details</h2><label>Full Name *</label><input id="name" autocomplete="name" placeholder="First name and surname" required><label>Pay Grade *</label><div class="choices" id="grade"><label class="choice"><input type="radio" name="grade" value="Ganger"><span>GANGER</span></label><label class="choice"><input type="radio" name="grade" value="Trade"><span>TRADE</span></label><label class="choice"><input type="radio" name="grade" value="Semi Skilled"><span>SEMI SKILLED</span></label><label class="choice"><input type="radio" name="grade" value="Labour"><span>LABOUR</span></label></div><div class="row"><div><label>Rail Week Start</label><input id="weekStart" type="date" required></div><div><label>Rail Week End</label><input id="weekEnd" type="date" readonly></div></div></div>
+
 <div id="shifts"></div><button type="button" class="add" id="add">+ ADD ANOTHER SHIFT</button>
-<div class="card"><div class="confirm"><input id="confirm" type="checkbox"><label for="confirm" style="margin:0">I confirm the information on this weekly timesheet is correct.</label></div><div id="error" class="error"></div><button type="submit" class="submit">SUBMIT WEEKLY TIMESHEET</button><p class="notice">Prototype: submission is not yet connected to Accounts. The live version will generate a weekly PDF and send it to accounts@hrsrail.co.uk.</p></div></form></div>
+
+<div class="card"><div class="confirm"><input id="confirm" type="checkbox"><label for="confirm" style="margin:0">I confirm the information on this weekly timesheet is correct.</label></div><div id="error" class="error"></div><button type="submit" class="submit">SUBMIT WEEKLY TIMESHEET</button><p class="notice">Timesheets are securely recorded on submission. Weekly PDF delivery to Accounts is being added before full rollout.</p></div></form></div>
+
 <template id="shiftTpl"><div class="card shift"><div class="shiftTitle"><h2>Shift <span class="num"></span></h2><button class="remove" type="button">Remove</button></div><label>Date *</label><input class="date" type="date"><label>Job Name / Location *</label><input class="job" placeholder="e.g. Brook Lane Footbridge"><label>Job Number *</label><input class="jobno" placeholder="Job number"><div class="row"><div><label>Shift Start *</label><input class="start" type="time"></div><div><label>Shift End *</label><input class="end" type="time"></div></div><label>Shift Type * — select one</label><div class="choices shiftType"></div><label>Additional Payments * — answer every item</label><div class="extras"></div><label>Notes / Comments (optional)</label><textarea class="notes" placeholder="Anything Accounts should know about this shift"></textarea></div></template>
+
 <script>
-const shiftTypes=['DAY','NIGHT','WEEKEND','ECO']; const extras=['Out of Zone','Towing','Yard Loading/Unloading outside shift hours','Staying Away / Hotel'];let n=0;
+const API_URL='https://ihvpvtymlquntajbsvrx.supabase.co/functions/v1/submit-timesheet';
+const PUBLISHABLE_KEY='sb_publishable_lTdwf5SjJfogmd-umaAtsg_z9xpJuOe';
+
+const shiftTypes=['DAY','NIGHT','WEEKEND','ECO'];
+const extras=['Out of Zone','Towing','Yard Loading/Unloading outside shift hours','Staying Away / Hotel'];
+let n=0;
+
 function esc(s){return s.replace(/[^a-z0-9]/gi,'_')}
-function addShift(){n++;const f=document.getElementById('shiftTpl').content.cloneNode(true);const card=f.querySelector('.shift');card.dataset.id=n;f.querySelector('.num').textContent=document.querySelectorAll('.shift').length+1;const st=f.querySelector('.shiftType');shiftTypes.forEach(x=>st.insertAdjacentHTML('beforeend',`<label class="choice"><input type="radio" name="type${n}" value="${x}"><span>${x}</span></label>`));const ex=f.querySelector('.extras');extras.forEach(x=>{let k=`${esc(x)}${n}`;ex.insertAdjacentHTML('beforeend',`<div class="yn"><b>${x}</b><label><input type="radio" name="${k}" value="Yes"><span>YES</span></label><label><input type="radio" name="${k}" value="No"><span>NO</span></label></div>`)});f.querySelector('.remove').onclick=()=>{card.remove();renum()};document.getElementById('shifts').appendChild(f);}
-function renum(){document.querySelectorAll('.shift .num').forEach((e,i)=>e.textContent=i+1)}
-document.getElementById('add').onclick=addShift;addShift();
-const ws=document.getElementById('weekStart'),we=document.getElementById('weekEnd');function fmt(d){return d.toISOString().slice(0,10)}function lastSaturday(){let d=new Date(),day=d.getDay(),diff=(day+1)%7;d.setDate(d.getDate()-diff);return d}ws.value=fmt(lastSaturday());function setEnd(){let d=new Date(ws.value+'T12:00:00');d.setDate(d.getDate()+6);we.value=fmt(d)}setEnd();ws.onchange=setEnd;
-function payroll(){const anchor=new Date('2026-09-22T12:00:00');let now=new Date(),p=new Date(anchor);while(p<now)p.setDate(p.getDate()+14);let dl=new Date(p);dl.setDate(dl.getDate()-1);dl.setHours(12,0,0,0);document.getElementById('payInfo').textContent=`Next payday: ${p.toLocaleDateString('en-GB')} • Timesheet deadline: ${dl.toLocaleDateString('en-GB')} 12:00`; }payroll();
-document.getElementById('form').onsubmit=e=>{e.preventDefault();let errs=[];let name=document.getElementById('name').value.trim();if(name.split(/\s+/).length<2)errs.push('Enter operative full name (first name and surname).');if(!document.querySelector('input[name="grade"]:checked'))errs.push('Select a pay grade.');const a=new Date(ws.value+'T00:00:00'),b=new Date(we.value+'T23:59:59');document.querySelectorAll('.shift').forEach((s,i)=>{let id=s.dataset.id,p=`Shift ${i+1}`;['date','job','jobno','start','end'].forEach(c=>{if(!s.querySelector('.'+c).value)errs.push(`${p} – ${c==='jobno'?'Job Number':c==='job'?'Job Name / Location':c[0].toUpperCase()+c.slice(1)} required.`)});let d=s.querySelector('.date').value;if(d){let dd=new Date(d+'T12:00:00');if(dd<a||dd>b)errs.push(`${p} – date must be within the selected rail week.`)}if(!s.querySelector(`input[name="type${id}"]:checked`))errs.push(`${p} – select Day, Night, Weekend or ECO.`);extras.forEach(x=>{if(!s.querySelector(`input[name="${esc(x)}${id}"]:checked`))errs.push(`${p} – answer Yes or No for ${x}.`)})});if(!document.getElementById('confirm').checked)errs.push('Confirm the timesheet is correct.');document.getElementById('error').innerHTML=errs.length?errs.slice(0,8).join('<br>'):'';if(!errs.length)alert('Prototype validation passed. This is ready for the submission/PDF stage.');};
+
+function addShift(){
+ n++;
+ const f=document.getElementById('shiftTpl').content.cloneNode(true);
+ const card=f.querySelector('.shift');
+ card.dataset.id=n;
+ f.querySelector('.num').textContent=document.querySelectorAll('.shift').length+1;
+ const st=f.querySelector('.shiftType');
+
+ shiftTypes.forEach(x=>st.insertAdjacentHTML('beforeend',`<label class="choice"><input type="radio" name="type${n}" value="${x}"><span>${x}</span></label>`));
+
+ const ex=f.querySelector('.extras');
+ extras.forEach(x=>{
+  let k=`${esc(x)}${n}`;
+  ex.insertAdjacentHTML('beforeend',`<div class="yn"><b>${x}</b><label><input type="radio" name="${k}" value="Yes"><span>YES</span></label><label><input type="radio" name="${k}" value="No"><span>NO</span></label></div>`)
+ });
+
+ f.querySelector('.remove').onclick=()=>{card.remove();renum()};
+ document.getElementById('shifts').appendChild(f);
+}
+
+function renum(){
+ document.querySelectorAll('.shift .num').forEach((e,i)=>e.textContent=i+1)
+}
+
+document.getElementById('add').onclick=addShift;
+addShift();
+
+const ws=document.getElementById('weekStart');
+const we=document.getElementById('weekEnd');
+
+function fmt(d){return d.toISOString().slice(0,10)}
+
+function lastSaturday(){
+ let d=new Date(),day=d.getDay(),diff=(day+1)%7;
+ d.setDate(d.getDate()-diff);
+ return d
+}
+
+ws.value=fmt(lastSaturday());
+
+function setEnd(){
+ let d=new Date(ws.value+'T12:00:00');
+ d.setDate(d.getDate()+6);
+ we.value=fmt(d)
+}
+
+setEnd();
+ws.onchange=setEnd;
+
+function payroll(){
+ const anchor=new Date('2026-09-22T12:00:00');
+ let now=new Date(),p=new Date(anchor);
+ while(p<now)p.setDate(p.getDate()+14);
+ let dl=new Date(p);
+ dl.setDate(dl.getDate()-1);
+ dl.setHours(12,0,0,0);
+
+ document.getElementById('payInfo').textContent=
+ `Next payday: ${p.toLocaleDateString('en-GB')} • Timesheet deadline: ${dl.toLocaleDateString('en-GB')} 12:00`;
+}
+payroll();
+
+function boolAnswer(s,id,label){
+ return s.querySelector(`input[name="${esc(label)}${id}"]:checked`)?.value==='Yes'
+}
+
+document.getElementById('form').onsubmit=async e=>{
+ e.preventDefault();
+
+ let errs=[];
+ let name=document.getElementById('name').value.trim();
+ const gradeEl=document.querySelector('input[name="grade"]:checked');
+
+ if(name.split(/\s+/).length<2)
+  errs.push('Enter operative full name (first name and surname).');
+
+ if(!gradeEl)
+  errs.push('Select a pay grade.');
+
+ const a=new Date(ws.value+'T00:00:00');
+ const b=new Date(we.value+'T23:59:59');
+ const shiftEls=[...document.querySelectorAll('.shift')];
+
+ shiftEls.forEach((s,i)=>{
+  let id=s.dataset.id,p=`Shift ${i+1}`;
+
+  ['date','job','jobno','start','end'].forEach(c=>{
+   if(!s.querySelector('.'+c).value)
+    errs.push(`${p} – ${c==='jobno'?'Job Number':c==='job'?'Job Name / Location':c[0].toUpperCase()+c.slice(1)} required.`)
+  });
+
+  let d=s.querySelector('.date').value;
+  if(d){
+   let dd=new Date(d+'T12:00:00');
+   if(dd<a||dd>b)
+    errs.push(`${p} – date must be within the selected rail week.`);
+  }
+
+  if(!s.querySelector(`input[name="type${id}"]:checked`))
+   errs.push(`${p} – select Day, Night, Weekend or ECO.`);
+
+  extras.forEach(x=>{
+   if(!s.querySelector(`input[name="${esc(x)}${id}"]:checked`))
+    errs.push(`${p} – answer Yes or No for ${x}.`)
+  });
+ });
+
+ if(!document.getElementById('confirm').checked)
+  errs.push('Confirm the timesheet is correct.');
+
+ const errorEl=document.getElementById('error');
+ errorEl.innerHTML=errs.length?errs.slice(0,8).join('<br>'):'';
+
+ if(errs.length)return;
+
+ const gradeMap={
+  'Ganger':'GANGER',
+  'Trade':'TRADE',
+  'Semi Skilled':'SEMI SKILLED',
+  'Labour':'LABOUR'
+ };
+
+ const shifts=shiftEls.map(s=>{
+  const id=s.dataset.id;
+
+  return{
+   shift_date:s.querySelector('.date').value,
+   job_name_location:s.querySelector('.job').value.trim(),
+   job_number:s.querySelector('.jobno').value.trim(),
+   shift_start_time:s.querySelector('.start').value,
+   shift_end_time:s.querySelector('.end').value,
+   shift_type:s.querySelector(`input[name="type${id}"]:checked`).value,
+   out_of_zone:boolAnswer(s,id,'Out of Zone'),
+   towing:boolAnswer(s,id,'Towing'),
+   yard_loading_unloading:boolAnswer(s,id,'Yard Loading/Unloading outside shift hours'),
+   staying_away_hotel:boolAnswer(s,id,'Staying Away / Hotel'),
+   comments:s.querySelector('.notes').value.trim()
+  }
+ });
+
+ const payload={
+  operative_name:name,
+  pay_grade:gradeMap[gradeEl.value],
+  rail_week_start:ws.value,
+  rail_week_end:we.value,
+  confirmed_accurate:true,
+  shifts
+ };
+
+ const btn=e.submitter||document.querySelector('.submit');
+ btn.disabled=true;
+ btn.textContent='SUBMITTING...';
+
+ try{
+  const r=await fetch(API_URL,{
+   method:'POST',
+   headers:{
+    'Content-Type':'application/json',
+    'apikey':PUBLISHABLE_KEY,
+    'Authorization':`Bearer ${PUBLISHABLE_KEY}`
+   },
+   body:JSON.stringify(payload)
+  });
+
+  let data={};
+  try{data=await r.json()}catch{}
+
+  if(!r.ok||!data.success)
+   throw new Error(data.error||'The timesheet could not be submitted. Please try again.');
+
+  const when=new Date(data.submitted_at).toLocaleString('en-GB',{
+   dateStyle:'medium',
+   timeStyle:'short'
+  });
+
+  alert(`Timesheet successfully submitted.\n\nSubmitted: ${when}${data.is_late?'\nStatus: LATE':''}`);
+  errorEl.innerHTML='';
+
+ }catch(err){
+  errorEl.textContent=err.message||'The timesheet could not be submitted. Please try again.';
+  window.scrollTo({
+   top:errorEl.getBoundingClientRect().top+window.scrollY-100,
+   behavior:'smooth'
+  });
+ }finally{
+  btn.disabled=false;
+  btn.textContent='SUBMIT WEEKLY TIMESHEET';
+ }
+};
 </script></body></html>
