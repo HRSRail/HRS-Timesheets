@@ -298,6 +298,81 @@ tr:hover td { background:#f8f9f9; }
   font-weight:700;
 }
 
+
+.approval-pending,
+.approval-part,
+.approval-approved,
+.approval-rejected {
+  display:inline-block;
+  padding:4px 7px;
+  border-radius:4px;
+  font-weight:800;
+  white-space:nowrap;
+}
+
+.approval-pending {
+  background:#eceeef;
+  color:#50575a;
+}
+
+.approval-part {
+  background:#fff1dc;
+  color:var(--amber);
+}
+
+.approval-approved {
+  background:#edf7df;
+  color:#4e7607;
+}
+
+.approval-rejected {
+  background:#fff0ef;
+  color:var(--red);
+}
+
+.approval-actions {
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+  min-width:155px;
+}
+
+.btn-approve {
+  background:var(--green);
+  color:#172000;
+}
+
+.btn-reject {
+  background:#fff0ef;
+  color:var(--red);
+  border:1px solid #f3c3bf;
+}
+
+.btn-disabled {
+  opacity:.45;
+  cursor:not-allowed;
+}
+
+.timesheet-action-row td {
+  background:#f7f8f8;
+  border-bottom:2px solid var(--border);
+  padding:10px 8px;
+}
+
+.timesheet-action-inner {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.timesheet-action-buttons {
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+}
+
 @media (max-width:1000px) {
   .controls {
     grid-template-columns:1fr 1fr;
@@ -477,6 +552,9 @@ tr:hover td { background:#f8f9f9; }
       </div>
 
       <div class="action-right">
+        <span style="align-self:center;font-size:12px;color:var(--muted);font-weight:700">
+          PAYROLL EXPORTS: APPROVED TIMESHEETS ONLY
+        </span>
         <button id="weeklyExcelBtn" class="btn-green">
           DOWNLOAD WEEKLY EXCEL
         </button>
@@ -509,7 +587,9 @@ tr:hover td { background:#f8f9f9; }
             <th>Yard</th>
             <th>Stay Away</th>
             <th>Comments</th>
-            <th>Status</th>
+            <th>Submission</th>
+            <th>Shift Approval</th>
+            <th>Office Action</th>
             <th>PDF</th>
           </tr>
         </thead>
@@ -752,7 +832,14 @@ function flattenTimesheets() {
         comments:shift.comments || "",
         is_late:ts.is_late,
         submitted_at:ts.submitted_at,
-        has_pdf:Boolean(ts.pdf_file_path)
+        has_pdf:Boolean(ts.pdf_file_path),
+        shift_id:shift.id,
+        shift_number:shift.shift_number,
+        shift_approval_status:shift.approval_status || "PENDING",
+        shift_rejection_reason:shift.rejection_reason || "",
+        timesheet_approval_status:ts.approval_status || "PENDING",
+        timesheet_rejection_reason:ts.rejection_reason || "",
+        timesheet_approved_at:ts.approved_at || ""
       });
     });
   });
@@ -815,6 +902,17 @@ function renderSummary() {
     displayedRows.filter(r => r.hotel).length;
 }
 
+function approvalBadge(status) {
+  const value = status || "PENDING";
+  const cls =
+    value === "APPROVED" ? "approval-approved" :
+    value === "REJECTED" ? "approval-rejected" :
+    value === "PART APPROVED" ? "approval-part" :
+    "approval-pending";
+
+  return `<span class="${cls}">${escapeHtml(value)}</span>`;
+}
+
 function renderTable() {
   const tbody = $("tableBody");
   tbody.innerHTML = "";
@@ -826,10 +924,12 @@ function renderTable() {
 
   $("emptyState").classList.add("hidden");
 
-  displayedRows.forEach(row => {
+  let lastTimesheetId = null;
+
+  displayedRows.forEach((row, index) => {
     const tr = document.createElement("tr");
 
-    const status =
+    const submissionStatus =
       row.is_late
         ? `<span class="late">LATE</span>`
         : `<span class="ontime">ON TIME</span>`;
@@ -841,6 +941,19 @@ function renderTable() {
              VIEW PDF
            </button>`
         : "—";
+
+    const shiftActions = `
+      <div class="approval-actions">
+        <button class="btn-approve btn-small"
+          onclick="approveShift('${row.shift_id}')">
+          APPROVE
+        </button>
+        <button class="btn-reject btn-small"
+          onclick="rejectShift('${row.shift_id}')">
+          REJECT
+        </button>
+      </div>
+    `;
 
     tr.innerHTML = `
       <td><strong>${escapeHtml(row.operative)}</strong></td>
@@ -857,12 +970,145 @@ function renderTable() {
       <td class="${row.yard ? "yes":"no"}">${yesNo(row.yard)}</td>
       <td class="${row.hotel ? "yes":"no"}">${yesNo(row.hotel)}</td>
       <td>${escapeHtml(row.comments)}</td>
-      <td>${status}</td>
+      <td>${submissionStatus}</td>
+      <td>
+        ${approvalBadge(row.shift_approval_status)}
+        ${row.shift_rejection_reason
+          ? `<div style="margin-top:5px;color:var(--red);max-width:180px">${escapeHtml(row.shift_rejection_reason)}</div>`
+          : ""}
+      </td>
+      <td>${shiftActions}</td>
       <td>${pdf}</td>
     `;
 
     tbody.appendChild(tr);
+
+    const nextRow = displayedRows[index + 1];
+    const isLastShiftForTimesheet =
+      !nextRow || nextRow.timesheet_id !== row.timesheet_id;
+
+    if (isLastShiftForTimesheet) {
+      const allForTimesheet = flattenTimesheets()
+        .filter(r => r.timesheet_id === row.timesheet_id);
+
+      const allApproved =
+        allForTimesheet.length > 0 &&
+        allForTimesheet.every(r => r.shift_approval_status === "APPROVED");
+
+      const actionTr = document.createElement("tr");
+      actionTr.className = "timesheet-action-row";
+
+      actionTr.innerHTML = `
+        <td colspan="18">
+          <div class="timesheet-action-inner">
+            <div>
+              <strong>Weekly Timesheet:</strong>
+              ${approvalBadge(row.timesheet_approval_status)}
+              ${row.timesheet_rejection_reason
+                ? `<span style="margin-left:8px;color:var(--red)">${escapeHtml(row.timesheet_rejection_reason)}</span>`
+                : ""}
+              ${row.timesheet_approved_at
+                ? `<span style="margin-left:8px;color:var(--muted)">Approved ${escapeHtml(formatDateTime(row.timesheet_approved_at))}</span>`
+                : ""}
+            </div>
+
+            <div class="timesheet-action-buttons">
+              <button
+                class="btn-green btn-small ${allApproved ? "" : "btn-disabled"}"
+                ${allApproved ? "" : "disabled"}
+                onclick="approveTimesheet('${row.timesheet_id}')">
+                APPROVE WHOLE TIMESHEET
+              </button>
+
+              <button
+                class="btn-reject btn-small"
+                onclick="rejectTimesheet('${row.timesheet_id}')">
+                REJECT WHOLE TIMESHEET
+              </button>
+            </div>
+          </div>
+        </td>
+      `;
+
+      tbody.appendChild(actionTr);
+    }
+
+    lastTimesheetId = row.timesheet_id;
   });
+}
+
+async function approveShift(shiftId) {
+  if (!confirm("Approve this shift?")) return;
+
+  try {
+    await callAccountsFunction({
+      action:"approve_shift",
+      shift_id:shiftId
+    });
+
+    await loadTimesheets();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function rejectShift(shiftId) {
+  const reason = prompt("Reason for rejecting this shift:");
+
+  if (reason === null) return;
+  if (!reason.trim()) {
+    alert("A rejection reason is required.");
+    return;
+  }
+
+  try {
+    await callAccountsFunction({
+      action:"reject_shift",
+      shift_id:shiftId,
+      reason:reason.trim()
+    });
+
+    await loadTimesheets();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function approveTimesheet(timesheetId) {
+  if (!confirm("Approve this complete weekly timesheet for payroll?")) return;
+
+  try {
+    await callAccountsFunction({
+      action:"approve_timesheet",
+      timesheet_id:timesheetId
+    });
+
+    await loadTimesheets();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function rejectTimesheet(timesheetId) {
+  const reason = prompt("Reason for rejecting this complete timesheet:");
+
+  if (reason === null) return;
+  if (!reason.trim()) {
+    alert("A rejection reason is required.");
+    return;
+  }
+
+  try {
+    await callAccountsFunction({
+      action:"reject_timesheet",
+      timesheet_id:timesheetId,
+      reason:reason.trim()
+    });
+
+    await loadTimesheets();
+  } catch (err) {
+    alert(err.message);
+  }
 }
 
 async function openPDF(timesheetId) {
@@ -874,7 +1120,7 @@ async function openPDF(timesheetId) {
       });
 
     window.open(
-      result.pdf_url,
+      result.url,
       "_blank",
       "noopener"
     );
@@ -900,7 +1146,9 @@ function excelRows(rows) {
     "Towing":yesNo(row.towing),
     "Yard Loading / Unloading":yesNo(row.yard),
     "Staying Away / Hotel":yesNo(row.hotel),
-    "Comments":row.comments
+    "Comments":row.comments,
+    "Shift Approval":row.shift_approval_status,
+    "Timesheet Approval":row.timesheet_approval_status
   }));
 }
 
@@ -932,7 +1180,9 @@ function downloadExcel(rows, filename, sheetName) {
     {wch:11},
     {wch:24},
     {wch:22},
-    {wch:35}
+    {wch:35},
+    {wch:18},
+    {wch:20}
   ];
 
   const wb = XLSX.utils.book_new();
@@ -950,7 +1200,8 @@ $("weeklyExcelBtn").addEventListener("click", () => {
   const week = $("weekStart").value;
 
   const rows = flattenTimesheets().filter(
-    r => r.week_start === week
+    r => r.week_start === week &&
+         r.timesheet_approval_status === "APPROVED"
   );
 
   downloadExcel(
@@ -975,7 +1226,9 @@ $("fortnightExcelBtn").addEventListener("click", async () => {
     const previous = rawTimesheets;
     rawTimesheets = result.timesheets || [];
 
-    const rows = flattenTimesheets();
+    const rows = flattenTimesheets().filter(
+      r => r.timesheet_approval_status === "APPROVED"
+    );
 
     rawTimesheets = previous;
 
