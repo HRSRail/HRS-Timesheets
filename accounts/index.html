@@ -507,6 +507,10 @@ tr:hover td { background:#f8f9f9; }
         </div>
 
       </div>
+
+      <div id="payrollPeriodInfo"
+           style="margin-top:14px;padding:11px 12px;background:#f7f8f8;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:700">
+      </div>
     </div>
 
     <div class="summary-grid">
@@ -640,6 +644,31 @@ function addDays(value, days) {
   return isoDate(d);
 }
 
+const PAYROLL_ANCHOR_PAYDAY = "2026-09-22";
+
+function payrollPeriodForDate(value) {
+  const selected = parseLocalDate(value);
+  const anchorStart = parseLocalDate("2026-09-05");
+  const days = Math.floor((selected - anchorStart) / 86400000);
+  const block = Math.floor(days / 14);
+
+  const start = new Date(anchorStart);
+  start.setDate(start.getDate() + block * 14);
+
+  return {
+    start: isoDate(start),
+    secondWeek: addDays(isoDate(start), 7),
+    end: addDays(isoDate(start), 13),
+    payday: addDays(isoDate(start), 17)
+  };
+}
+
+function syncPayrollWeekSelection() {
+  if ($("periodType").value !== "fortnight") return;
+  const p = payrollPeriodForDate($("weekStart").value);
+  $("weekStart").value = p.start;
+}
+
 function formatDate(value) {
   if (!value) return "";
   return new Intl.DateTimeFormat("en-GB").format(
@@ -766,7 +795,27 @@ async function showDashboard() {
   await loadTimesheets();
 }
 
+function renderPayrollPeriodInfo() {
+  const type = $("periodType").value;
+  const start = $("weekStart").value;
+
+  if (type === "fortnight") {
+    const p = payrollPeriodForDate(start);
+    $("payrollPeriodInfo").innerHTML =
+      `Payroll block: <strong>${formatDate(p.start)} – ${formatDate(p.end)}</strong> ` +
+      `&nbsp;|&nbsp; Payday: <strong>${formatDate(p.payday)}</strong><br>` +
+      `Rail weeks: ${formatDate(p.start)} – ${formatDate(addDays(p.start,6))} ` +
+      `and ${formatDate(p.secondWeek)} – ${formatDate(p.end)}`;
+  } else if (type === "week") {
+    $("payrollPeriodInfo").innerHTML =
+      `Rail week: <strong>${formatDate(start)} – ${formatDate(addDays(start,6))}</strong>`;
+  } else {
+    $("payrollPeriodInfo").textContent = "Showing all submitted timesheets.";
+  }
+}
+
 async function loadTimesheets() {
+  renderPayrollPeriodInfo();
   $("loading").classList.remove("hidden");
   $("emptyState").classList.add("hidden");
   $("dataMessage").innerHTML = "";
@@ -785,8 +834,9 @@ async function loadTimesheets() {
     }
 
     if (period === "fortnight") {
-      request.rail_week_start = start;
-      request.rail_week_end = addDays(start, 7);
+      const payroll = payrollPeriodForDate(start);
+      request.rail_week_start = payroll.start;
+      request.rail_week_end = payroll.secondWeek;
     }
 
     const result =
@@ -1300,15 +1350,14 @@ $("weeklyExcelBtn").addEventListener("click", () => {
 });
 
 $("fortnightExcelBtn").addEventListener("click", async () => {
-  const start = $("weekStart").value;
-  const secondWeek = addDays(start,7);
+  const payroll = payrollPeriodForDate($("weekStart").value);
 
   try {
     const result =
       await callAccountsFunction({
         action:"list",
-        rail_week_start:start,
-        rail_week_end:secondWeek
+        rail_week_start:payroll.start,
+        rail_week_end:payroll.secondWeek
       });
 
     const previous = rawTimesheets;
@@ -1322,7 +1371,7 @@ $("fortnightExcelBtn").addEventListener("click", async () => {
 
     downloadExcel(
       rows,
-      `HRS Rail Payroll - ${start} to ${addDays(start,13)}.xlsx`,
+      `HRS Rail Payroll - Payday ${payroll.payday}.xlsx`,
       "Fortnightly Payroll"
     );
 
@@ -1333,8 +1382,14 @@ $("fortnightExcelBtn").addEventListener("click", async () => {
 
 $("refreshBtn").addEventListener("click", loadTimesheets);
 
-$("weekStart").addEventListener("change", loadTimesheets);
-$("periodType").addEventListener("change", loadTimesheets);
+$("weekStart").addEventListener("change", async () => {
+  syncPayrollWeekSelection();
+  await loadTimesheets();
+});
+$("periodType").addEventListener("change", async () => {
+  syncPayrollWeekSelection();
+  await loadTimesheets();
+});
 
 $("searchBox").addEventListener("input", applyFilters);
 $("gradeFilter").addEventListener("change", applyFilters);
