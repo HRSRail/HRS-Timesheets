@@ -2,7 +2,7 @@
 *{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:Arial,sans-serif;color:#17202a}.wrap{max-width:720px;margin:auto;padding:16px}.head{background:#161b22;color:white;padding:22px;border-radius:16px;margin-bottom:14px}.head b{font-size:27px}.head div{opacity:.85;margin-top:4px}.card{background:white;padding:18px;border-radius:16px;margin:12px 0;box-shadow:0 2px 10px #0000000c}h2{font-size:18px;margin:0 0 14px}label{font-weight:700;font-size:13px;display:block;margin:12px 0 6px}input,textarea{width:100%;font-size:16px;padding:13px;border:1px solid #c9d0d7;border-radius:10px;background:white}textarea{min-height:70px}.choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}.choice input{display:none}.choice span{display:block;text-align:center;padding:12px;border:1px solid #bbc3ca;border-radius:10px;font-weight:700}.choice input:checked+span{background:#17202a;color:white;border-color:#17202a}.yn{display:grid;grid-template-columns:1fr 70px 70px;align-items:center;gap:7px;margin:10px 0}.yn b{font-size:14px}.yn label{margin:0}.yn input{display:none}.yn span{display:block;text-align:center;padding:10px;border:1px solid #bbc3ca;border-radius:9px;font-weight:700}.yn input:checked+span{background:#17202a;color:white}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.shiftTitle{display:flex;justify-content:space-between;align-items:center}.remove{border:0;background:#eee;padding:8px 10px;border-radius:8px}.add,.submit{width:100%;padding:15px;border:0;border-radius:11px;font-weight:800;font-size:16px}.add{background:#e8ebee}.submit{background:#18864b;color:white;margin-top:12px}.submit:disabled{opacity:.65}.notice{font-size:13px;background:#fff6d9;padding:12px;border-radius:10px}.error{color:#b42318;font-weight:700;font-size:14px;margin-top:10px}.deadline{font-size:13px;margin-top:12px;color:#dce3e9}.confirm{display:flex;gap:10px;align-items:flex-start}.confirm input{width:auto;margin-top:3px}@media(max-width:500px){.wrap{padding:10px}.card{padding:15px}.row{grid-template-columns:1fr 1fr}.yn{grid-template-columns:1fr 62px 62px}}
 </style></head><body><div class="wrap"><div class="head"><b>HRS RAIL</b><div>Weekly Timesheet</div><div class="deadline" id="payInfo"></div></div>
 
-<form id="form"><div class="card"><h2>Operative Details</h2><label>Full Name *</label><input id="name" autocomplete="name" placeholder="First name and surname" required><label>Pay Grade *</label><div class="choices" id="grade"><label class="choice"><input type="radio" name="grade" value="Ganger"><span>GANGER</span></label><label class="choice"><input type="radio" name="grade" value="Trade"><span>TRADE</span></label><label class="choice"><input type="radio" name="grade" value="Semi Skilled"><span>SEMI SKILLED</span></label><label class="choice"><input type="radio" name="grade" value="Labour"><span>LABOUR</span></label></div><div class="row"><div><label>Rail Week Start</label><input id="weekStart" type="date" required></div><div><label>Rail Week End</label><input id="weekEnd" type="date" readonly></div></div></div>
+<form id="form"><div class="card"><h2>Operative Details <span id="railWeekNo" style="float:right;font-size:14px;color:#66727d"></span></h2><label>Full Name *</label><input id="name" autocomplete="name" placeholder="First name and surname" required><label>Pay Grade *</label><div class="choices" id="grade"><label class="choice"><input type="radio" name="grade" value="Ganger"><span>GANGER</span></label><label class="choice"><input type="radio" name="grade" value="Trade"><span>TRADE</span></label><label class="choice"><input type="radio" name="grade" value="Semi Skilled"><span>SEMI SKILLED</span></label><label class="choice"><input type="radio" name="grade" value="Labour"><span>LABOUR</span></label></div><div class="row"><div><label>Rail Week Start</label><input id="weekStart" type="date" required readonly></div><div><label>Rail Week End</label><input id="weekEnd" type="date" readonly></div></div></div>
 
 <div id="shifts"></div><button type="button" class="add" id="add">+ ADD ANOTHER SHIFT</button>
 
@@ -38,36 +38,63 @@ function addShift(){
 
  f.querySelector('.remove').onclick=()=>{card.remove();renum()};
  document.getElementById('shifts').appendChild(f);
+
+ const added=document.querySelector('#shifts .shift:last-child .date');
+ if(added && ws.value && we.value){
+  added.min=ws.value;
+  added.max=we.value;
+ }
 }
 
 function renum(){
  document.querySelectorAll('.shift .num').forEach((e,i)=>e.textContent=i+1)
 }
 
-document.getElementById('add').onclick=addShift;
-addShift();
-
 const ws=document.getElementById('weekStart');
 const we=document.getElementById('weekEnd');
 
-function fmt(d){return d.toISOString().slice(0,10)}
+document.getElementById('add').onclick=addShift;
+addShift();
 
-function lastSaturday(){
- let d=new Date(),day=d.getDay(),diff=(day+1)%7;
+function fmt(d){
+ const y=d.getFullYear();
+ const m=String(d.getMonth()+1).padStart(2,'0');
+ const day=String(d.getDate()).padStart(2,'0');
+ return `${y}-${m}-${day}`
+}
+
+function currentRailWeekStart(){
+ const d=new Date();
+ d.setHours(12,0,0,0);
+ const diff=(d.getDay()+1)%7;
  d.setDate(d.getDate()-diff);
  return d
 }
 
-ws.value=fmt(lastSaturday());
+const RAIL_WEEK_ANCHOR=new Date('2026-09-05T12:00:00');
+const RAIL_WEEK_ANCHOR_NUMBER=23;
 
-function setEnd(){
- let d=new Date(ws.value+'T12:00:00');
- d.setDate(d.getDate()+6);
- we.value=fmt(d)
+function railWeekNumber(startDate){
+ const days=Math.round((startDate-RAIL_WEEK_ANCHOR)/86400000);
+ return RAIL_WEEK_ANCHOR_NUMBER+Math.floor(days/7)
 }
 
-setEnd();
-ws.onchange=setEnd;
+function setCurrentRailWeek(){
+ const start=currentRailWeekStart();
+ const end=new Date(start);
+ end.setDate(end.getDate()+6);
+
+ ws.value=fmt(start);
+ we.value=fmt(end);
+ document.getElementById('railWeekNo').textContent=`RAIL WEEK ${railWeekNumber(start)}`;
+
+ document.querySelectorAll('.shift .date').forEach(input=>{
+   input.min=ws.value;
+   input.max=we.value;
+ });
+}
+
+setCurrentRailWeek();
 
 function payroll(){
  const anchor=new Date('2026-09-22T12:00:00');
