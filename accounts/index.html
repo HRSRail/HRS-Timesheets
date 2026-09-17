@@ -239,7 +239,7 @@ label {
 table {
   width:100%;
   border-collapse:collapse;
-  min-width:1500px;
+  min-width:1900px;
   font-size:12px;
 }
 
@@ -553,7 +553,7 @@ tr:hover td { background:#f8f9f9; }
 
       <div class="action-right">
         <span style="align-self:center;font-size:12px;color:var(--muted);font-weight:700">
-          PAYROLL EXPORTS: APPROVED TIMESHEETS ONLY
+          PAYROLL EXPORTS: APPROVED SHIFTS ONLY
         </span>
         <button id="weeklyExcelBtn" class="btn-green">
           DOWNLOAD WEEKLY EXCEL
@@ -829,6 +829,14 @@ function flattenTimesheets() {
         towing:shift.towing,
         yard:shift.yard_loading_unloading,
         hotel:shift.staying_away_hotel,
+        out_zone_approval:shift.out_of_zone_approval || (shift.out_of_zone ? "PENDING" : "NOT CLAIMED"),
+        towing_approval:shift.towing_approval || (shift.towing ? "PENDING" : "NOT CLAIMED"),
+        yard_approval:shift.yard_loading_unloading_approval || (shift.yard_loading_unloading ? "PENDING" : "NOT CLAIMED"),
+        hotel_approval:shift.staying_away_hotel_approval || (shift.staying_away_hotel ? "PENDING" : "NOT CLAIMED"),
+        out_zone_reason:shift.out_of_zone_rejection_reason || "",
+        towing_reason:shift.towing_rejection_reason || "",
+        yard_reason:shift.yard_loading_unloading_rejection_reason || "",
+        hotel_reason:shift.staying_away_hotel_rejection_reason || "",
         comments:shift.comments || "",
         is_late:ts.is_late,
         submitted_at:ts.submitted_at,
@@ -913,6 +921,46 @@ function approvalBadge(status) {
   return `<span class="${cls}">${escapeHtml(value)}</span>`;
 }
 
+function extraReviewed(row) {
+  const checks = [
+    [row.out_zone, row.out_zone_approval],
+    [row.towing, row.towing_approval],
+    [row.yard, row.yard_approval],
+    [row.hotel, row.hotel_approval]
+  ];
+
+  return checks.every(([claimed, status]) =>
+    !claimed || status === "APPROVED" || status === "REJECTED"
+  );
+}
+
+function extraApprovalCell(row, claimedField, statusField, reasonField, extraKey) {
+  if (!row[claimedField]) {
+    return `<span class="no">NO</span>`;
+  }
+
+  const status = row[statusField] || "PENDING";
+  const reason = row[reasonField] || "";
+
+  return `
+    <div class="yes" style="margin-bottom:5px">YES</div>
+    ${approvalBadge(status)}
+    ${reason
+      ? `<div style="margin-top:5px;color:var(--red);max-width:170px">${escapeHtml(reason)}</div>`
+      : ""}
+    <div class="approval-actions" style="margin-top:6px;min-width:135px">
+      <button class="btn-approve btn-small"
+        onclick="approveExtra('${row.shift_id}','${extraKey}')">
+        APPROVE
+      </button>
+      <button class="btn-reject btn-small"
+        onclick="rejectExtra('${row.shift_id}','${extraKey}')">
+        REJECT
+      </button>
+    </div>
+  `;
+}
+
 function renderTable() {
   const tbody = $("tableBody");
   tbody.innerHTML = "";
@@ -965,10 +1013,10 @@ function renderTable() {
       <td>${escapeHtml(row.start)}</td>
       <td>${escapeHtml(row.finish)}</td>
       <td>${escapeHtml(row.type)}</td>
-      <td class="${row.out_zone ? "yes":"no"}">${yesNo(row.out_zone)}</td>
-      <td class="${row.towing ? "yes":"no"}">${yesNo(row.towing)}</td>
-      <td class="${row.yard ? "yes":"no"}">${yesNo(row.yard)}</td>
-      <td class="${row.hotel ? "yes":"no"}">${yesNo(row.hotel)}</td>
+      <td>${extraApprovalCell(row,"out_zone","out_zone_approval","out_zone_reason","out_of_zone")}</td>
+      <td>${extraApprovalCell(row,"towing","towing_approval","towing_reason","towing")}</td>
+      <td>${extraApprovalCell(row,"yard","yard_approval","yard_reason","yard_loading_unloading")}</td>
+      <td>${extraApprovalCell(row,"hotel","hotel_approval","hotel_reason","staying_away_hotel")}</td>
       <td>${escapeHtml(row.comments)}</td>
       <td>${submissionStatus}</td>
       <td>
@@ -993,7 +1041,9 @@ function renderTable() {
 
       const allApproved =
         allForTimesheet.length > 0 &&
-        allForTimesheet.every(r => r.shift_approval_status === "APPROVED");
+        allForTimesheet.every(
+          r => r.shift_approval_status === "APPROVED" && extraReviewed(r)
+        );
 
       const actionTr = document.createElement("tr");
       actionTr.className = "timesheet-action-row";
@@ -1020,11 +1070,7 @@ function renderTable() {
                 APPROVE WHOLE TIMESHEET
               </button>
 
-              <button
-                class="btn-reject btn-small"
-                onclick="rejectTimesheet('${row.timesheet_id}')">
-                REJECT WHOLE TIMESHEET
-              </button>
+
             </div>
           </div>
         </td>
@@ -1065,6 +1111,45 @@ async function rejectShift(shiftId) {
     await callAccountsFunction({
       action:"reject_shift",
       shift_id:shiftId,
+      reason:reason.trim()
+    });
+
+    await loadTimesheets();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function approveExtra(shiftId, extra) {
+  if (!confirm("Approve this additional payment claim?")) return;
+
+  try {
+    await callAccountsFunction({
+      action:"approve_extra",
+      shift_id:shiftId,
+      extra
+    });
+
+    await loadTimesheets();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function rejectExtra(shiftId, extra) {
+  const reason = prompt("Reason for rejecting this additional payment claim:");
+
+  if (reason === null) return;
+  if (!reason.trim()) {
+    alert("A rejection reason is required.");
+    return;
+  }
+
+  try {
+    await callAccountsFunction({
+      action:"reject_extra",
+      shift_id:shiftId,
+      extra,
       reason:reason.trim()
     });
 
@@ -1142,13 +1227,26 @@ function excelRows(rows) {
     "Start":row.start,
     "Finish":row.finish,
     "Shift Type":row.type,
-    "Out of Zone":yesNo(row.out_zone),
-    "Towing":yesNo(row.towing),
-    "Yard Loading / Unloading":yesNo(row.yard),
-    "Staying Away / Hotel":yesNo(row.hotel),
+
+    "Out of Zone Claimed":yesNo(row.out_zone),
+    "Out of Zone Payroll":row.out_zone && row.out_zone_approval === "APPROVED" ? "YES" : "NO",
+    "Out of Zone Review":row.out_zone_approval,
+
+    "Towing Claimed":yesNo(row.towing),
+    "Towing Payroll":row.towing && row.towing_approval === "APPROVED" ? "YES" : "NO",
+    "Towing Review":row.towing_approval,
+
+    "Yard Loading / Unloading Claimed":yesNo(row.yard),
+    "Yard Loading / Unloading Payroll":row.yard && row.yard_approval === "APPROVED" ? "YES" : "NO",
+    "Yard Review":row.yard_approval,
+
+    "Staying Away / Hotel Claimed":yesNo(row.hotel),
+    "Staying Away / Hotel Payroll":row.hotel && row.hotel_approval === "APPROVED" ? "YES" : "NO",
+    "Stay Away Review":row.hotel_approval,
+
     "Comments":row.comments,
     "Shift Approval":row.shift_approval_status,
-    "Timesheet Approval":row.timesheet_approval_status
+    "Timesheet Status":row.timesheet_approval_status
   }));
 }
 
@@ -1166,23 +1264,13 @@ function downloadExcel(rows, filename, sheetName) {
   };
 
   ws["!cols"] = [
-    {wch:24},
-    {wch:15},
-    {wch:16},
-    {wch:16},
-    {wch:14},
-    {wch:15},
-    {wch:34},
-    {wch:10},
-    {wch:10},
-    {wch:13},
-    {wch:13},
-    {wch:11},
-    {wch:24},
-    {wch:22},
-    {wch:35},
-    {wch:18},
-    {wch:20}
+    {wch:24},{wch:15},{wch:16},{wch:16},{wch:14},{wch:15},
+    {wch:34},{wch:10},{wch:10},{wch:13},
+    {wch:19},{wch:19},{wch:18},
+    {wch:16},{wch:16},{wch:16},
+    {wch:28},{wch:28},{wch:16},
+    {wch:27},{wch:27},{wch:18},
+    {wch:35},{wch:18},{wch:18}
   ];
 
   const wb = XLSX.utils.book_new();
@@ -1201,7 +1289,7 @@ $("weeklyExcelBtn").addEventListener("click", () => {
 
   const rows = flattenTimesheets().filter(
     r => r.week_start === week &&
-         r.timesheet_approval_status === "APPROVED"
+         r.shift_approval_status === "APPROVED"
   );
 
   downloadExcel(
@@ -1227,7 +1315,7 @@ $("fortnightExcelBtn").addEventListener("click", async () => {
     rawTimesheets = result.timesheets || [];
 
     const rows = flattenTimesheets().filter(
-      r => r.timesheet_approval_status === "APPROVED"
+      r => r.shift_approval_status === "APPROVED"
     );
 
     rawTimesheets = previous;
