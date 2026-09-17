@@ -630,7 +630,10 @@ let displayedRows = [];
 const $ = id => document.getElementById(id);
 
 function isoDate(date) {
-  return date.toISOString().slice(0,10);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 function parseLocalDate(value) {
@@ -667,6 +670,20 @@ function syncPayrollWeekSelection() {
   if ($("periodType").value !== "fortnight") return;
   const p = payrollPeriodForDate($("weekStart").value);
   $("weekStart").value = p.start;
+}
+
+const RAIL_WEEK_ANCHOR_START = "2026-09-05";
+const RAIL_WEEK_ANCHOR_NUMBER = 23;
+
+function railWeekNumber(value) {
+  const date = parseLocalDate(value);
+  const anchor = parseLocalDate(RAIL_WEEK_ANCHOR_START);
+  const days = Math.round((date - anchor) / 86400000);
+  const weeks = Math.floor(days / 7);
+
+  // Network Rail year rolls through 52/53 weeks. For the current
+  // dashboard period this anchor provides the required sequential number.
+  return RAIL_WEEK_ANCHOR_NUMBER + weeks;
 }
 
 function formatDate(value) {
@@ -804,11 +821,11 @@ function renderPayrollPeriodInfo() {
     $("payrollPeriodInfo").innerHTML =
       `Payroll block: <strong>${formatDate(p.start)} – ${formatDate(p.end)}</strong> ` +
       `&nbsp;|&nbsp; Payday: <strong>${formatDate(p.payday)}</strong><br>` +
-      `Rail weeks: ${formatDate(p.start)} – ${formatDate(addDays(p.start,6))} ` +
-      `and ${formatDate(p.secondWeek)} – ${formatDate(p.end)}`;
+      `Rail Week ${railWeekNumber(p.start)}: ${formatDate(p.start)} – ${formatDate(addDays(p.start,6))}<br>` +
+      `Rail Week ${railWeekNumber(p.secondWeek)}: ${formatDate(p.secondWeek)} – ${formatDate(p.end)}`;
   } else if (type === "week") {
     $("payrollPeriodInfo").innerHTML =
-      `Rail week: <strong>${formatDate(start)} – ${formatDate(addDays(start,6))}</strong>`;
+      `Rail Week ${railWeekNumber(start)}: <strong>${formatDate(start)} – ${formatDate(addDays(start,6))}</strong>`;
   } else {
     $("payrollPeriodInfo").textContent = "Showing all submitted timesheets.";
   }
@@ -1056,7 +1073,7 @@ function renderTable() {
     tr.innerHTML = `
       <td><strong>${escapeHtml(row.operative)}</strong></td>
       <td>${escapeHtml(row.grade)}</td>
-      <td>${formatDate(row.week_start)} - ${formatDate(row.week_end)}</td>
+      <td><strong>Week ${railWeekNumber(row.week_start)}</strong><br>${formatDate(row.week_start)} - ${formatDate(row.week_end)}</td>
       <td>${formatDate(row.date)}</td>
       <td><strong>${escapeHtml(row.job_number)}</strong></td>
       <td>${escapeHtml(row.job_location)}</td>
@@ -1269,6 +1286,7 @@ function excelRows(rows) {
   return rows.map(row => ({
     "Operative":row.operative,
     "Pay Grade":row.grade,
+    "Rail Week":railWeekNumber(row.week_start),
     "Rail Week Start":formatDate(row.week_start),
     "Rail Week End":formatDate(row.week_end),
     "Shift Date":formatDate(row.date),
