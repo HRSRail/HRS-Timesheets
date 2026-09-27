@@ -88,7 +88,10 @@ button {
   color:#172000;
 }
 
-.btn-green:hover { background:var(--green-dark); color:white; }
+.btn-green:hover {
+  background:var(--green-dark);
+  color:white;
+}
 
 .btn-dark {
   background:var(--dark2);
@@ -140,7 +143,9 @@ label {
   line-height:1.5;
 }
 
-.form-group { margin-bottom:15px; }
+.form-group {
+  margin-bottom:15px;
+}
 
 .message {
   margin-top:14px;
@@ -259,14 +264,18 @@ td {
   vertical-align:top;
 }
 
-tr:hover td { background:#f8f9f9; }
+tr:hover td {
+  background:#f8f9f9;
+}
 
 .yes {
   font-weight:800;
   color:#517c00;
 }
 
-.no { color:#73797c; }
+.no {
+  color:#73797c;
+}
 
 .late {
   display:inline-block;
@@ -297,7 +306,6 @@ tr:hover td { background:#f8f9f9; }
   text-align:center;
   font-weight:700;
 }
-
 
 .approval-pending,
 .approval-part,
@@ -384,7 +392,9 @@ tr:hover td { background:#f8f9f9; }
 }
 
 @media (max-width:600px) {
-  header { padding:18px; }
+  header {
+    padding:18px;
+  }
 
   .header-inner,
   .dashboard-top {
@@ -464,14 +474,14 @@ tr:hover td { background:#f8f9f9; }
       <div class="controls">
 
         <div>
-          <label>Rail Week Start</label>
+          <label>Timesheet Week Start</label>
           <input id="weekStart" type="date">
         </div>
 
         <div>
           <label>View</label>
           <select id="periodType">
-            <option value="week">Single Rail Week</option>
+            <option value="week">Single Timesheet Week</option>
             <option value="fortnight">Fortnightly Payroll</option>
             <option value="all">All Submitted</option>
           </select>
@@ -479,9 +489,11 @@ tr:hover td { background:#f8f9f9; }
 
         <div>
           <label>Search</label>
-          <input id="searchBox"
-                 type="search"
-                 placeholder="Operative, job number or location">
+          <input
+            id="searchBox"
+            type="search"
+            placeholder="Operative, job number or location"
+          >
         </div>
 
         <div>
@@ -508,9 +520,10 @@ tr:hover td { background:#f8f9f9; }
 
       </div>
 
-      <div id="payrollPeriodInfo"
-           style="margin-top:14px;padding:11px 12px;background:#f7f8f8;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:700">
-      </div>
+      <div
+        id="payrollPeriodInfo"
+        style="margin-top:14px;padding:11px 12px;background:#f7f8f8;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:700"
+      ></div>
     </div>
 
     <div class="summary-grid">
@@ -559,6 +572,7 @@ tr:hover td { background:#f8f9f9; }
         <span style="align-self:center;font-size:12px;color:var(--muted);font-weight:700">
           PAYROLL EXPORTS: APPROVED SHIFTS ONLY
         </span>
+
         <button id="weeklyExcelBtn" class="btn-green">
           DOWNLOAD WEEKLY EXCEL
         </button>
@@ -572,14 +586,16 @@ tr:hover td { background:#f8f9f9; }
     <div id="dataMessage"></div>
 
     <div class="table-wrap">
-      <div id="loading" class="loading hidden">Loading timesheets...</div>
+      <div id="loading" class="loading hidden">
+        Loading timesheets...
+      </div>
 
       <table id="timesheetTable">
         <thead>
           <tr>
             <th>Operative</th>
             <th>Grade</th>
-            <th>Week</th>
+            <th>Timesheet Week</th>
             <th>Date</th>
             <th>Job No.</th>
             <th>Job / Location</th>
@@ -647,11 +663,11 @@ function addDays(value, days) {
   return isoDate(d);
 }
 
-const PAYROLL_ANCHOR_PAYDAY = "2026-09-22";
+const PAYROLL_ANCHOR_PAYDAY = "2026-10-06";
 
 function payrollPeriodForDate(value) {
   const selected = parseLocalDate(value);
-  const anchorStart = parseLocalDate("2026-09-05");
+  const anchorStart = parseLocalDate("2026-09-21");
   const days = Math.floor((selected - anchorStart) / 86400000);
   const block = Math.floor(days / 14);
 
@@ -662,13 +678,16 @@ function payrollPeriodForDate(value) {
     start: isoDate(start),
     secondWeek: addDays(isoDate(start), 7),
     end: addDays(isoDate(start), 13),
-    payday: addDays(isoDate(start), 17)
+    payday: addDays(isoDate(start), 15)
   };
 }
 
 function syncPayrollWeekSelection() {
   if ($("periodType").value !== "fortnight") return;
-  const p = payrollPeriodForDate($("weekStart").value);
+
+  const p =
+    payrollPeriodForDate($("weekStart").value);
+
   $("weekStart").value = p.start;
 }
 
@@ -677,24 +696,42 @@ const RAIL_WEEK_ANCHOR_NUMBER = 23;
 
 function railWeekNumber(value) {
   const date = parseLocalDate(value);
-  const anchor = parseLocalDate(RAIL_WEEK_ANCHOR_START);
-  const days = Math.round((date - anchor) / 86400000);
-  const weeks = Math.floor(days / 7);
 
-  // Network Rail year rolls through 52/53 weeks. For the current
-  // dashboard period this anchor provides the required sequential number.
+  // Timesheets start on Monday. Map that date back to the
+  // Network Rail Saturday in force at the start of that week.
+  const daysBackToSaturday =
+    (date.getDay() + 1) % 7;
+
+  date.setDate(
+    date.getDate() - daysBackToSaturday
+  );
+
+  const anchor =
+    parseLocalDate(RAIL_WEEK_ANCHOR_START);
+
+  const days =
+    Math.round((date - anchor) / 86400000);
+
+  const weeks =
+    Math.floor(days / 7);
+
+  // Saturday 05/09/2026 = NR Rail Week 23.
   return RAIL_WEEK_ANCHOR_NUMBER + weeks;
 }
 
 function formatDate(value) {
   if (!value) return "";
-  return new Intl.DateTimeFormat("en-GB").format(
+
+  return new Intl.DateTimeFormat(
+    "en-GB"
+  ).format(
     parseLocalDate(value)
   );
 }
 
 function formatDateTime(value) {
   if (!value) return "";
+
   return new Intl.DateTimeFormat(
     "en-GB",
     {
@@ -717,14 +754,19 @@ function escapeHtml(value) {
     .replaceAll("'","&#039;");
 }
 
-function lastSaturday() {
+function currentTimesheetWeekStart() {
   const d = new Date();
-  const diff = (d.getDay() + 1) % 7;
-  d.setDate(d.getDate() - diff);
+
+  const diff =
+    (d.getDay() + 6) % 7;
+
+  d.setDate(
+    d.getDate() - diff
+  );
+
   return isoDate(d);
 }
-
-$("weekStart").value = lastSaturday();
+  $("weekStart").value = currentTimesheetWeekStart();
 
 async function getSession() {
   const { data } = await sb.auth.getSession();
@@ -818,21 +860,30 @@ function renderPayrollPeriodInfo() {
 
   if (type === "fortnight") {
     const p = payrollPeriodForDate(start);
+
     $("payrollPeriodInfo").innerHTML =
-      `Payroll block: <strong>${formatDate(p.start)} – ${formatDate(p.end)}</strong> ` +
+      `Payroll period: <strong>${formatDate(p.start)} – ${formatDate(p.end)}</strong> ` +
       `&nbsp;|&nbsp; Payday: <strong>${formatDate(p.payday)}</strong><br>` +
-      `Rail Week ${railWeekNumber(p.start)}: ${formatDate(p.start)} – ${formatDate(addDays(p.start,6))}<br>` +
-      `Rail Week ${railWeekNumber(p.secondWeek)}: ${formatDate(p.secondWeek)} – ${formatDate(p.end)}`;
+      `Timesheet Week 1: ${formatDate(p.start)} – ${formatDate(addDays(p.start,6))} ` +
+      `&nbsp;|&nbsp; NR Rail Week at Start: <strong>${railWeekNumber(p.start)}</strong><br>` +
+      `Timesheet Week 2: ${formatDate(p.secondWeek)} – ${formatDate(p.end)} ` +
+      `&nbsp;|&nbsp; NR Rail Week at Start: <strong>${railWeekNumber(p.secondWeek)}</strong>`;
+
   } else if (type === "week") {
+
     $("payrollPeriodInfo").innerHTML =
-      `Rail Week ${railWeekNumber(start)}: <strong>${formatDate(start)} – ${formatDate(addDays(start,6))}</strong>`;
+      `Timesheet Week: <strong>${formatDate(start)} – ${formatDate(addDays(start,6))}</strong> ` +
+      `&nbsp;|&nbsp; NR Rail Week at Start: <strong>${railWeekNumber(start)}</strong>`;
+
   } else {
-    $("payrollPeriodInfo").textContent = "Showing all submitted timesheets.";
+    $("payrollPeriodInfo").textContent =
+      "Showing all submitted timesheets.";
   }
 }
 
 async function loadTimesheets() {
   renderPayrollPeriodInfo();
+
   $("loading").classList.remove("hidden");
   $("emptyState").classList.add("hidden");
   $("dataMessage").innerHTML = "";
@@ -852,6 +903,7 @@ async function loadTimesheets() {
 
     if (period === "fortnight") {
       const payroll = payrollPeriodForDate(start);
+
       request.rail_week_start = payroll.start;
       request.rail_week_end = payroll.secondWeek;
     }
@@ -861,9 +913,23 @@ async function loadTimesheets() {
 
     rawTimesheets = result.timesheets || [];
 
+    rawTimesheets.sort((a, b) => {
+      const weekCompare =
+        String(a.rail_week_start)
+          .localeCompare(String(b.rail_week_start));
+
+      if (weekCompare !== 0) {
+        return weekCompare;
+      }
+
+      return String(a.operative_name || "")
+        .localeCompare(String(b.operative_name || ""));
+    });
+
     applyFilters();
 
   } catch (err) {
+
     $("dataMessage").innerHTML =
       `<div class="message error">${escapeHtml(err.message)}</div>`;
 
@@ -879,42 +945,84 @@ function flattenTimesheets() {
   const rows = [];
 
   rawTimesheets.forEach(ts => {
+
     (ts.timesheet_shifts || []).forEach(shift => {
+
       rows.push({
         timesheet_id:ts.id,
         operative:ts.operative_name,
         grade:ts.pay_grade,
         week_start:ts.rail_week_start,
         week_end:ts.rail_week_end,
+
         date:shift.shift_date,
         job_number:shift.job_number,
         job_location:shift.job_name_location,
-        start:shift.shift_start_time?.slice(0,5) || "",
-        finish:shift.shift_end_time?.slice(0,5) || "",
+
+        start:
+          shift.shift_start_time?.slice(0,5) || "",
+
+        finish:
+          shift.shift_end_time?.slice(0,5) || "",
+
         type:shift.shift_type,
+
         out_zone:shift.out_of_zone,
         towing:shift.towing,
         yard:shift.yard_loading_unloading,
         hotel:shift.staying_away_hotel,
-        out_zone_approval:shift.out_of_zone_approval || (shift.out_of_zone ? "PENDING" : "NOT CLAIMED"),
-        towing_approval:shift.towing_approval || (shift.towing ? "PENDING" : "NOT CLAIMED"),
-        yard_approval:shift.yard_loading_unloading_approval || (shift.yard_loading_unloading ? "PENDING" : "NOT CLAIMED"),
-        hotel_approval:shift.staying_away_hotel_approval || (shift.staying_away_hotel ? "PENDING" : "NOT CLAIMED"),
-        out_zone_reason:shift.out_of_zone_rejection_reason || "",
-        towing_reason:shift.towing_rejection_reason || "",
-        yard_reason:shift.yard_loading_unloading_rejection_reason || "",
-        hotel_reason:shift.staying_away_hotel_rejection_reason || "",
+
+        out_zone_approval:
+          shift.out_of_zone_approval ||
+          (shift.out_of_zone ? "PENDING" : "NOT CLAIMED"),
+
+        towing_approval:
+          shift.towing_approval ||
+          (shift.towing ? "PENDING" : "NOT CLAIMED"),
+
+        yard_approval:
+          shift.yard_loading_unloading_approval ||
+          (shift.yard_loading_unloading ? "PENDING" : "NOT CLAIMED"),
+
+        hotel_approval:
+          shift.staying_away_hotel_approval ||
+          (shift.staying_away_hotel ? "PENDING" : "NOT CLAIMED"),
+
+        out_zone_reason:
+          shift.out_of_zone_rejection_reason || "",
+
+        towing_reason:
+          shift.towing_rejection_reason || "",
+
+        yard_reason:
+          shift.yard_loading_unloading_rejection_reason || "",
+
+        hotel_reason:
+          shift.staying_away_hotel_rejection_reason || "",
+
         comments:shift.comments || "",
+
         is_late:ts.is_late,
         submitted_at:ts.submitted_at,
         has_pdf:Boolean(ts.pdf_file_path),
+
         shift_id:shift.id,
         shift_number:shift.shift_number,
-        shift_approval_status:shift.approval_status || "PENDING",
-        shift_rejection_reason:shift.rejection_reason || "",
-        timesheet_approval_status:ts.approval_status || "PENDING",
-        timesheet_rejection_reason:ts.rejection_reason || "",
-        timesheet_approved_at:ts.approved_at || ""
+
+        shift_approval_status:
+          shift.approval_status || "PENDING",
+
+        shift_rejection_reason:
+          shift.rejection_reason || "",
+
+        timesheet_approval_status:
+          ts.approval_status || "PENDING",
+
+        timesheet_rejection_reason:
+          ts.rejection_reason || "",
+
+        timesheet_approved_at:
+          ts.approved_at || ""
       });
     });
   });
@@ -924,26 +1032,39 @@ function flattenTimesheets() {
 
 function applyFilters() {
   const search =
-    $("searchBox").value.trim().toLowerCase();
+    $("searchBox").value
+      .trim()
+      .toLowerCase();
 
-  const grade = $("gradeFilter").value;
-  const type = $("typeFilter").value;
+  const grade =
+    $("gradeFilter").value;
 
-  displayedRows = flattenTimesheets().filter(row => {
+  const type =
+    $("typeFilter").value;
 
-    if (grade && row.grade !== grade) return false;
-    if (type && row.type !== type) return false;
+  displayedRows =
+    flattenTimesheets().filter(row => {
 
-    if (search) {
-      const haystack =
-        `${row.operative} ${row.job_number} ${row.job_location}`
-          .toLowerCase();
+      if (grade && row.grade !== grade) {
+        return false;
+      }
 
-      if (!haystack.includes(search)) return false;
-    }
+      if (type && row.type !== type) {
+        return false;
+      }
 
-    return true;
-  });
+      if (search) {
+        const haystack =
+          `${row.operative} ${row.job_number} ${row.job_location}`
+            .toLowerCase();
+
+        if (!haystack.includes(search)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
 
   renderTable();
   renderSummary();
@@ -951,7 +1072,9 @@ function applyFilters() {
 
 function renderSummary() {
   const operatives =
-    new Set(displayedRows.map(r => r.operative));
+    new Set(
+      displayedRows.map(r => r.operative)
+    );
 
   const lateTimesheets =
     new Set(
@@ -960,32 +1083,54 @@ function renderSummary() {
         .map(r => r.timesheet_id)
     );
 
-  $("sumOperatives").textContent = operatives.size;
-  $("sumShifts").textContent = displayedRows.length;
-  $("sumLate").textContent = lateTimesheets.size;
+  $("sumOperatives").textContent =
+    operatives.size;
+
+  $("sumShifts").textContent =
+    displayedRows.length;
+
+  $("sumLate").textContent =
+    lateTimesheets.size;
 
   $("sumZone").textContent =
-    displayedRows.filter(r => r.out_zone).length;
+    displayedRows.filter(
+      r => r.out_zone
+    ).length;
 
   $("sumTowing").textContent =
-    displayedRows.filter(r => r.towing).length;
+    displayedRows.filter(
+      r => r.towing
+    ).length;
 
   $("sumYard").textContent =
-    displayedRows.filter(r => r.yard).length;
+    displayedRows.filter(
+      r => r.yard
+    ).length;
 
   $("sumHotel").textContent =
-    displayedRows.filter(r => r.hotel).length;
+    displayedRows.filter(
+      r => r.hotel
+    ).length;
 }
 
 function approvalBadge(status) {
-  const value = status || "PENDING";
-  const cls =
-    value === "APPROVED" ? "approval-approved" :
-    value === "REJECTED" ? "approval-rejected" :
-    value === "PART APPROVED" ? "approval-part" :
-    "approval-pending";
+  const value =
+    status || "PENDING";
 
-  return `<span class="${cls}">${escapeHtml(value)}</span>`;
+  const cls =
+    value === "APPROVED"
+      ? "approval-approved"
+      : value === "REJECTED"
+      ? "approval-rejected"
+      : value === "PART APPROVED"
+      ? "approval-part"
+      : "approval-pending";
+
+  return `
+    <span class="${cls}">
+      ${escapeHtml(value)}
+    </span>
+  `;
 }
 
 function extraReviewed(row) {
@@ -996,32 +1141,86 @@ function extraReviewed(row) {
     [row.hotel, row.hotel_approval]
   ];
 
-  return checks.every(([claimed, status]) =>
-    !claimed || status === "APPROVED" || status === "REJECTED"
+  return checks.every(
+    ([claimed, status]) =>
+      !claimed ||
+      status === "APPROVED" ||
+      status === "REJECTED"
   );
 }
 
-function extraApprovalCell(row, claimedField, statusField, reasonField, extraKey) {
+function extraApprovalCell(
+  row,
+  claimedField,
+  statusField,
+  reasonField,
+  extraKey
+) {
+
   if (!row[claimedField]) {
     return `<span class="no">NO</span>`;
   }
 
-  const status = row[statusField] || "PENDING";
-  const reason = row[reasonField] || "";
+  const status =
+    row[statusField] || "PENDING";
+
+  const reason =
+    row[reasonField] || "";
 
   return `
-    <div class="yes" style="margin-bottom:5px">YES</div>
+    <div
+      class="yes"
+      style="margin-bottom:5px"
+    >
+      YES
+    </div>
+
     ${approvalBadge(status)}
-    ${reason
-      ? `<div style="margin-top:5px;color:var(--red);max-width:170px">${escapeHtml(reason)}</div>`
-      : ""}
-    <div class="approval-actions" style="margin-top:6px;min-width:135px">
-      <button class="btn-approve btn-small"
-        onclick="approveExtra('${row.shift_id}','${extraKey}')">
+
+    ${
+      reason
+        ? `
+          <div
+            style="
+              margin-top:5px;
+              color:var(--red);
+              max-width:170px
+            "
+          >
+            ${escapeHtml(reason)}
+          </div>
+        `
+        : ""
+    }
+
+    <div
+      class="approval-actions"
+      style="
+        margin-top:6px;
+        min-width:135px
+      "
+    >
+      <button
+        class="btn-approve btn-small"
+        onclick="
+          approveExtra(
+            '${row.shift_id}',
+            '${extraKey}'
+          )
+        "
+      >
         APPROVE
       </button>
-      <button class="btn-reject btn-small"
-        onclick="rejectExtra('${row.shift_id}','${extraKey}')">
+
+      <button
+        class="btn-reject btn-small"
+        onclick="
+          rejectExtra(
+            '${row.shift_id}',
+            '${extraKey}'
+          )
+        "
+      >
         REJECT
       </button>
     </div>
@@ -1029,129 +1228,347 @@ function extraApprovalCell(row, claimedField, statusField, reasonField, extraKey
 }
 
 function renderTable() {
-  const tbody = $("tableBody");
+  const tbody =
+    $("tableBody");
+
   tbody.innerHTML = "";
 
   if (!displayedRows.length) {
-    $("emptyState").classList.remove("hidden");
+    $("emptyState")
+      .classList
+      .remove("hidden");
+
     return;
   }
 
-  $("emptyState").classList.add("hidden");
+  $("emptyState")
+    .classList
+    .add("hidden");
 
-  let lastTimesheetId = null;
+  displayedRows.forEach(
+    (row, index) => {
 
-  displayedRows.forEach((row, index) => {
-    const tr = document.createElement("tr");
+      const tr =
+        document.createElement("tr");
 
-    const submissionStatus =
-      row.is_late
-        ? `<span class="late">LATE</span>`
-        : `<span class="ontime">ON TIME</span>`;
+      const submissionStatus =
+        row.is_late
+          ? `<span class="late">LATE</span>`
+          : `<span class="ontime">ON TIME</span>`;
 
-    const pdf =
-      row.has_pdf
-        ? `<button class="btn-light btn-small"
-             onclick="openPDF('${row.timesheet_id}')">
-             VIEW PDF
-           </button>`
-        : "—";
+      const pdf =
+        row.has_pdf
+          ? `
+            <button
+              class="btn-light btn-small"
+              onclick="
+                openPDF(
+                  '${row.timesheet_id}'
+                )
+              "
+            >
+              VIEW PDF
+            </button>
+          `
+          : "—";
 
-    const shiftActions = `
-      <div class="approval-actions">
-        <button class="btn-approve btn-small"
-          onclick="approveShift('${row.shift_id}')">
-          APPROVE
-        </button>
-        <button class="btn-reject btn-small"
-          onclick="rejectShift('${row.shift_id}')">
-          REJECT
-        </button>
-      </div>
-    `;
+      const shiftActions = `
+        <div class="approval-actions">
 
-    tr.innerHTML = `
-      <td><strong>${escapeHtml(row.operative)}</strong></td>
-      <td>${escapeHtml(row.grade)}</td>
-      <td><strong>Week ${railWeekNumber(row.week_start)}</strong><br>${formatDate(row.week_start)} - ${formatDate(row.week_end)}</td>
-      <td>${formatDate(row.date)}</td>
-      <td><strong>${escapeHtml(row.job_number)}</strong></td>
-      <td>${escapeHtml(row.job_location)}</td>
-      <td>${escapeHtml(row.start)}</td>
-      <td>${escapeHtml(row.finish)}</td>
-      <td>${escapeHtml(row.type)}</td>
-      <td>${extraApprovalCell(row,"out_zone","out_zone_approval","out_zone_reason","out_of_zone")}</td>
-      <td>${extraApprovalCell(row,"towing","towing_approval","towing_reason","towing")}</td>
-      <td>${extraApprovalCell(row,"yard","yard_approval","yard_reason","yard_loading_unloading")}</td>
-      <td>${extraApprovalCell(row,"hotel","hotel_approval","hotel_reason","staying_away_hotel")}</td>
-      <td>${escapeHtml(row.comments)}</td>
-      <td>${submissionStatus}</td>
-      <td>
-        ${approvalBadge(row.shift_approval_status)}
-        ${row.shift_rejection_reason
-          ? `<div style="margin-top:5px;color:var(--red);max-width:180px">${escapeHtml(row.shift_rejection_reason)}</div>`
-          : ""}
-      </td>
-      <td>${shiftActions}</td>
-      <td>${pdf}</td>
-    `;
+          <button
+            class="btn-approve btn-small"
+            onclick="
+              approveShift(
+                '${row.shift_id}'
+              )
+            "
+          >
+            APPROVE
+          </button>
 
-    tbody.appendChild(tr);
+          <button
+            class="btn-reject btn-small"
+            onclick="
+              rejectShift(
+                '${row.shift_id}'
+              )
+            "
+          >
+            REJECT
+          </button>
 
-    const nextRow = displayedRows[index + 1];
-    const isLastShiftForTimesheet =
-      !nextRow || nextRow.timesheet_id !== row.timesheet_id;
+        </div>
+      `;
 
-    if (isLastShiftForTimesheet) {
-      const allForTimesheet = flattenTimesheets()
-        .filter(r => r.timesheet_id === row.timesheet_id);
+      tr.innerHTML = `
+        <td>
+          <strong>
+            ${escapeHtml(row.operative)}
+          </strong>
+        </td>
 
-      const allApproved =
-        allForTimesheet.length > 0 &&
-        allForTimesheet.every(
-          r => r.shift_approval_status === "APPROVED" && extraReviewed(r)
-        );
+        <td>
+          ${escapeHtml(row.grade)}
+        </td>
 
-      const actionTr = document.createElement("tr");
-      actionTr.className = "timesheet-action-row";
+        <td>
+          <strong>
+            NR Week at Start
+            ${railWeekNumber(row.week_start)}
+          </strong>
+          <br>
+          ${formatDate(row.week_start)}
+          -
+          ${formatDate(row.week_end)}
+        </td>
 
-      actionTr.innerHTML = `
-        <td colspan="18">
-          <div class="timesheet-action-inner">
-            <div>
-              <strong>Weekly Timesheet:</strong>
-              ${approvalBadge(row.timesheet_approval_status)}
-              ${row.timesheet_rejection_reason
-                ? `<span style="margin-left:8px;color:var(--red)">${escapeHtml(row.timesheet_rejection_reason)}</span>`
-                : ""}
-              ${row.timesheet_approved_at
-                ? `<span style="margin-left:8px;color:var(--muted)">Approved ${escapeHtml(formatDateTime(row.timesheet_approved_at))}</span>`
-                : ""}
-            </div>
+        <td>
+          ${formatDate(row.date)}
+        </td>
 
-            <div class="timesheet-action-buttons">
-              <button
-                class="btn-green btn-small ${allApproved ? "" : "btn-disabled"}"
-                ${allApproved ? "" : "disabled"}
-                onclick="approveTimesheet('${row.timesheet_id}')">
-                APPROVE WHOLE TIMESHEET
-              </button>
+        <td>
+          <strong>
+            ${escapeHtml(row.job_number)}
+          </strong>
+        </td>
 
+        <td>
+          ${escapeHtml(row.job_location)}
+        </td>
 
-            </div>
-          </div>
+        <td>
+          ${escapeHtml(row.start)}
+        </td>
+
+        <td>
+          ${escapeHtml(row.finish)}
+        </td>
+
+        <td>
+          ${escapeHtml(row.type)}
+        </td>
+
+        <td>
+          ${extraApprovalCell(
+            row,
+            "out_zone",
+            "out_zone_approval",
+            "out_zone_reason",
+            "out_of_zone"
+          )}
+        </td>
+
+        <td>
+          ${extraApprovalCell(
+            row,
+            "towing",
+            "towing_approval",
+            "towing_reason",
+            "towing"
+          )}
+        </td>
+
+        <td>
+          ${extraApprovalCell(
+            row,
+            "yard",
+            "yard_approval",
+            "yard_reason",
+            "yard_loading_unloading"
+          )}
+        </td>
+
+        <td>
+          ${extraApprovalCell(
+            row,
+            "hotel",
+            "hotel_approval",
+            "hotel_reason",
+            "staying_away_hotel"
+          )}
+        </td>
+
+        <td>
+          ${escapeHtml(row.comments)}
+        </td>
+
+        <td>
+          ${submissionStatus}
+        </td>
+
+        <td>
+          ${approvalBadge(
+            row.shift_approval_status
+          )}
+
+          ${
+            row.shift_rejection_reason
+              ? `
+                <div
+                  style="
+                    margin-top:5px;
+                    color:var(--red);
+                    max-width:180px
+                  "
+                >
+                  ${escapeHtml(
+                    row.shift_rejection_reason
+                  )}
+                </div>
+              `
+              : ""
+          }
+        </td>
+
+        <td>
+          ${shiftActions}
+        </td>
+
+        <td>
+          ${pdf}
         </td>
       `;
 
-      tbody.appendChild(actionTr);
-    }
+      tbody.appendChild(tr);
 
-    lastTimesheetId = row.timesheet_id;
-  });
+      const nextRow =
+        displayedRows[index + 1];
+
+      const isLastShiftForTimesheet =
+        !nextRow ||
+        nextRow.timesheet_id !==
+          row.timesheet_id;
+
+      if (isLastShiftForTimesheet) {
+
+        const allForTimesheet =
+          flattenTimesheets()
+            .filter(
+              r =>
+                r.timesheet_id ===
+                row.timesheet_id
+            );
+
+        const allApproved =
+          allForTimesheet.length > 0 &&
+          allForTimesheet.every(
+            r =>
+              r.shift_approval_status ===
+                "APPROVED" &&
+              extraReviewed(r)
+          );
+
+        const actionTr =
+          document.createElement("tr");
+
+        actionTr.className =
+          "timesheet-action-row";
+
+        actionTr.innerHTML = `
+          <td colspan="18">
+
+            <div
+              class="
+                timesheet-action-inner
+              "
+            >
+
+              <div>
+
+                <strong>
+                  Weekly Timesheet:
+                </strong>
+
+                ${approvalBadge(
+                  row.timesheet_approval_status
+                )}
+
+                ${
+                  row.timesheet_rejection_reason
+                    ? `
+                      <span
+                        style="
+                          margin-left:8px;
+                          color:var(--red)
+                        "
+                      >
+                        ${escapeHtml(
+                          row.timesheet_rejection_reason
+                        )}
+                      </span>
+                    `
+                    : ""
+                }
+
+                ${
+                  row.timesheet_approved_at
+                    ? `
+                      <span
+                        style="
+                          margin-left:8px;
+                          color:var(--muted)
+                        "
+                      >
+                        Approved
+                        ${escapeHtml(
+                          formatDateTime(
+                            row.timesheet_approved_at
+                          )
+                        )}
+                      </span>
+                    `
+                    : ""
+                }
+
+              </div>
+
+              <div
+                class="
+                  timesheet-action-buttons
+                "
+              >
+
+                <button
+                  class="
+                    btn-green
+                    btn-small
+                    ${
+                      allApproved
+                        ? ""
+                        : "btn-disabled"
+                    }
+                  "
+                  ${
+                    allApproved
+                      ? ""
+                      : "disabled"
+                  }
+                  onclick="
+                    approveTimesheet(
+                      '${row.timesheet_id}'
+                    )
+                  "
+                >
+                  APPROVE WHOLE TIMESHEET
+                </button>
+
+              </div>
+
+            </div>
+
+          </td>
+        `;
+
+        tbody.appendChild(actionTr);
+      }
+    }
+  );
 }
 
 async function approveShift(shiftId) {
-  if (!confirm("Approve this shift?")) return;
+  if (!confirm("Approve this shift?")) {
+    return;
+  }
 
   try {
     await callAccountsFunction({
@@ -1160,17 +1577,26 @@ async function approveShift(shiftId) {
     });
 
     await loadTimesheets();
+
   } catch (err) {
     alert(err.message);
   }
 }
 
 async function rejectShift(shiftId) {
-  const reason = prompt("Reason for rejecting this shift:");
+  const reason =
+    prompt(
+      "Reason for rejecting this shift:"
+    );
 
-  if (reason === null) return;
+  if (reason === null) {
+    return;
+  }
+
   if (!reason.trim()) {
-    alert("A rejection reason is required.");
+    alert(
+      "A rejection reason is required."
+    );
     return;
   }
 
@@ -1182,13 +1608,24 @@ async function rejectShift(shiftId) {
     });
 
     await loadTimesheets();
+
   } catch (err) {
     alert(err.message);
   }
 }
 
-async function approveExtra(shiftId, extra) {
-  if (!confirm("Approve this additional payment claim?")) return;
+async function approveExtra(
+  shiftId,
+  extra
+) {
+
+  if (
+    !confirm(
+      "Approve this additional payment claim?"
+    )
+  ) {
+    return;
+  }
 
   try {
     await callAccountsFunction({
@@ -1198,17 +1635,30 @@ async function approveExtra(shiftId, extra) {
     });
 
     await loadTimesheets();
+
   } catch (err) {
     alert(err.message);
   }
 }
 
-async function rejectExtra(shiftId, extra) {
-  const reason = prompt("Reason for rejecting this additional payment claim:");
+async function rejectExtra(
+  shiftId,
+  extra
+) {
 
-  if (reason === null) return;
+  const reason =
+    prompt(
+      "Reason for rejecting this additional payment claim:"
+    );
+
+  if (reason === null) {
+    return;
+  }
+
   if (!reason.trim()) {
-    alert("A rejection reason is required.");
+    alert(
+      "A rejection reason is required."
+    );
     return;
   }
 
@@ -1221,13 +1671,23 @@ async function rejectExtra(shiftId, extra) {
     });
 
     await loadTimesheets();
+
   } catch (err) {
     alert(err.message);
   }
 }
 
-async function approveTimesheet(timesheetId) {
-  if (!confirm("Approve this complete weekly timesheet for payroll?")) return;
+async function approveTimesheet(
+  timesheetId
+) {
+
+  if (
+    !confirm(
+      "Approve this complete weekly timesheet for payroll?"
+    )
+  ) {
+    return;
+  }
 
   try {
     await callAccountsFunction({
@@ -1236,34 +1696,16 @@ async function approveTimesheet(timesheetId) {
     });
 
     await loadTimesheets();
+
   } catch (err) {
     alert(err.message);
   }
 }
 
-async function rejectTimesheet(timesheetId) {
-  const reason = prompt("Reason for rejecting this complete timesheet:");
+async function openPDF(
+  timesheetId
+) {
 
-  if (reason === null) return;
-  if (!reason.trim()) {
-    alert("A rejection reason is required.");
-    return;
-  }
-
-  try {
-    await callAccountsFunction({
-      action:"reject_timesheet",
-      timesheet_id:timesheetId,
-      reason:reason.trim()
-    });
-
-    await loadTimesheets();
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
-async function openPDF(timesheetId) {
   try {
     const result =
       await callAccountsFunction({
@@ -1283,65 +1725,196 @@ async function openPDF(timesheetId) {
 }
 
 function excelRows(rows) {
-  return rows.map(row => ({
-    "Operative":row.operative,
-    "Pay Grade":row.grade,
-    "Rail Week":railWeekNumber(row.week_start),
-    "Rail Week Start":formatDate(row.week_start),
-    "Rail Week End":formatDate(row.week_end),
-    "Shift Date":formatDate(row.date),
-    "Job Number":row.job_number,
-    "Job / Location":row.job_location,
-    "Start":row.start,
-    "Finish":row.finish,
-    "Shift Type":row.type,
 
-    "Out of Zone Claimed":yesNo(row.out_zone),
-    "Out of Zone Payroll":row.out_zone && row.out_zone_approval === "APPROVED" ? "YES" : "NO",
-    "Out of Zone Review":row.out_zone_approval,
+  const orderedRows =
+    [...rows].sort((a, b) => {
 
-    "Towing Claimed":yesNo(row.towing),
-    "Towing Payroll":row.towing && row.towing_approval === "APPROVED" ? "YES" : "NO",
-    "Towing Review":row.towing_approval,
+      const dateCompare =
+        String(a.date)
+          .localeCompare(
+            String(b.date)
+          );
 
-    "Yard Loading / Unloading Claimed":yesNo(row.yard),
-    "Yard Loading / Unloading Payroll":row.yard && row.yard_approval === "APPROVED" ? "YES" : "NO",
-    "Yard Review":row.yard_approval,
+      if (dateCompare !== 0) {
+        return dateCompare;
+      }
 
-    "Staying Away / Hotel Claimed":yesNo(row.hotel),
-    "Staying Away / Hotel Payroll":row.hotel && row.hotel_approval === "APPROVED" ? "YES" : "NO",
-    "Stay Away Review":row.hotel_approval,
+      const timeCompare =
+        String(a.start)
+          .localeCompare(
+            String(b.start)
+          );
 
-    "Comments":row.comments,
-    "Shift Approval":row.shift_approval_status,
-    "Timesheet Status":row.timesheet_approval_status
+      if (timeCompare !== 0) {
+        return timeCompare;
+      }
+
+      return String(a.operative)
+        .localeCompare(
+          String(b.operative)
+        );
+    });
+
+  return orderedRows.map(row => ({
+
+    "Operative":
+      row.operative,
+
+    "Pay Grade":
+      row.grade,
+
+    "NR Rail Week at Start":
+      railWeekNumber(
+        row.week_start
+      ),
+
+    "Timesheet Week Start":
+      formatDate(
+        row.week_start
+      ),
+
+    "Timesheet Week End":
+      formatDate(
+        row.week_end
+      ),
+
+    "Shift Date":
+      formatDate(
+        row.date
+      ),
+
+    "Job Number":
+      row.job_number,
+
+    "Job / Location":
+      row.job_location,
+
+    "Start":
+      row.start,
+
+    "Finish":
+      row.finish,
+
+    "Shift Type":
+      row.type,
+
+    "Out of Zone Claimed":
+      yesNo(row.out_zone),
+
+    "Out of Zone Payroll":
+      row.out_zone &&
+      row.out_zone_approval ===
+        "APPROVED"
+        ? "YES"
+        : "NO",
+
+    "Out of Zone Review":
+      row.out_zone_approval,
+
+    "Towing Claimed":
+      yesNo(row.towing),
+
+    "Towing Payroll":
+      row.towing &&
+      row.towing_approval ===
+        "APPROVED"
+        ? "YES"
+        : "NO",
+
+    "Towing Review":
+      row.towing_approval,
+
+    "Yard Loading / Unloading Claimed":
+      yesNo(row.yard),
+
+    "Yard Loading / Unloading Payroll":
+      row.yard &&
+      row.yard_approval ===
+        "APPROVED"
+        ? "YES"
+        : "NO",
+
+    "Yard Review":
+      row.yard_approval,
+
+    "Staying Away / Hotel Claimed":
+      yesNo(row.hotel),
+
+    "Staying Away / Hotel Payroll":
+      row.hotel &&
+      row.hotel_approval ===
+        "APPROVED"
+        ? "YES"
+        : "NO",
+
+    "Stay Away Review":
+      row.hotel_approval,
+
+    "Comments":
+      row.comments,
+
+    "Shift Approval":
+      row.shift_approval_status,
+
+    "Timesheet Status":
+      row.timesheet_approval_status
+
   }));
 }
 
-function downloadExcel(rows, filename, sheetName) {
+function downloadExcel(
+  rows,
+  filename,
+  sheetName
+) {
+
   if (!rows.length) {
-    alert("There are no shifts to export.");
+    alert(
+      "There are no shifts to export."
+    );
     return;
   }
 
   const ws =
-    XLSX.utils.json_to_sheet(excelRows(rows));
+    XLSX.utils.json_to_sheet(
+      excelRows(rows)
+    );
 
   ws["!autofilter"] = {
     ref:ws["!ref"]
   };
 
   ws["!cols"] = [
-    {wch:24},{wch:15},{wch:16},{wch:16},{wch:14},{wch:15},
-    {wch:34},{wch:10},{wch:10},{wch:13},
-    {wch:19},{wch:19},{wch:18},
-    {wch:16},{wch:16},{wch:16},
-    {wch:28},{wch:28},{wch:16},
-    {wch:27},{wch:27},{wch:18},
-    {wch:35},{wch:18},{wch:18}
+    {wch:24},
+    {wch:15},
+    {wch:20},
+    {wch:20},
+    {wch:20},
+    {wch:15},
+    {wch:16},
+    {wch:34},
+    {wch:10},
+    {wch:10},
+    {wch:13},
+    {wch:19},
+    {wch:19},
+    {wch:18},
+    {wch:16},
+    {wch:16},
+    {wch:16},
+    {wch:28},
+    {wch:28},
+    {wch:16},
+    {wch:27},
+    {wch:27},
+    {wch:18},
+    {wch:35},
+    {wch:18},
+    {wch:18}
   ];
 
-  const wb = XLSX.utils.book_new();
+  const wb =
+    XLSX.utils.book_new();
 
   XLSX.utils.book_append_sheet(
     wb,
@@ -1349,76 +1922,170 @@ function downloadExcel(rows, filename, sheetName) {
     sheetName
   );
 
-  XLSX.writeFile(wb, filename);
+  XLSX.writeFile(
+    wb,
+    filename
+  );
 }
 
-$("weeklyExcelBtn").addEventListener("click", () => {
-  const week = $("weekStart").value;
+$("weeklyExcelBtn")
+  .addEventListener(
+    "click",
+    () => {
 
-  const rows = flattenTimesheets().filter(
-    r => r.week_start === week &&
-         r.shift_approval_status === "APPROVED"
+      const week =
+        $("weekStart").value;
+
+      const rows =
+        flattenTimesheets()
+          .filter(
+            r =>
+              r.week_start === week &&
+              r.shift_approval_status ===
+                "APPROVED"
+          );
+
+      downloadExcel(
+        rows,
+        `HRS Rail Timesheets - Week Starting ${week}.xlsx`,
+        "Weekly Timesheets"
+      );
+    }
   );
 
-  downloadExcel(
-    rows,
-    `HRS Rail Timesheets - Week ${week}.xlsx`,
-    "Weekly Timesheets"
+$("fortnightExcelBtn")
+  .addEventListener(
+    "click",
+    async () => {
+
+      const payroll =
+        payrollPeriodForDate(
+          $("weekStart").value
+        );
+
+      try {
+
+        const result =
+          await callAccountsFunction({
+            action:"list",
+            rail_week_start:
+              payroll.start,
+            rail_week_end:
+              payroll.secondWeek
+          });
+
+        const previous =
+          rawTimesheets;
+
+        rawTimesheets =
+          result.timesheets || [];
+
+        rawTimesheets.sort(
+          (a, b) => {
+
+            const weekCompare =
+              String(
+                a.rail_week_start
+              ).localeCompare(
+                String(
+                  b.rail_week_start
+                )
+              );
+
+            if (
+              weekCompare !== 0
+            ) {
+              return weekCompare;
+            }
+
+            return String(
+              a.operative_name || ""
+            ).localeCompare(
+              String(
+                b.operative_name || ""
+              )
+            );
+          }
+        );
+
+        const rows =
+          flattenTimesheets()
+            .filter(
+              r =>
+                r.shift_approval_status ===
+                  "APPROVED"
+            );
+
+        rawTimesheets =
+          previous;
+
+        downloadExcel(
+          rows,
+          `HRS Rail Payroll - Payday ${payroll.payday}.xlsx`,
+          "Fortnightly Payroll"
+        );
+
+      } catch (err) {
+        alert(err.message);
+      }
+    }
   );
-});
 
-$("fortnightExcelBtn").addEventListener("click", async () => {
-  const payroll = payrollPeriodForDate($("weekStart").value);
+$("refreshBtn")
+  .addEventListener(
+    "click",
+    loadTimesheets
+  );
 
-  try {
-    const result =
-      await callAccountsFunction({
-        action:"list",
-        rail_week_start:payroll.start,
-        rail_week_end:payroll.secondWeek
-      });
+$("weekStart")
+  .addEventListener(
+    "change",
+    async () => {
 
-    const previous = rawTimesheets;
-    rawTimesheets = result.timesheets || [];
+      syncPayrollWeekSelection();
 
-    const rows = flattenTimesheets().filter(
-      r => r.shift_approval_status === "APPROVED"
-    );
+      await loadTimesheets();
+    }
+  );
 
-    rawTimesheets = previous;
+$("periodType")
+  .addEventListener(
+    "change",
+    async () => {
 
-    downloadExcel(
-      rows,
-      `HRS Rail Payroll - Payday ${payroll.payday}.xlsx`,
-      "Fortnightly Payroll"
-    );
+      syncPayrollWeekSelection();
 
-  } catch (err) {
-    alert(err.message);
-  }
-});
+      await loadTimesheets();
+    }
+  );
 
-$("refreshBtn").addEventListener("click", loadTimesheets);
+$("searchBox")
+  .addEventListener(
+    "input",
+    applyFilters
+  );
 
-$("weekStart").addEventListener("change", async () => {
-  syncPayrollWeekSelection();
-  await loadTimesheets();
-});
-$("periodType").addEventListener("change", async () => {
-  syncPayrollWeekSelection();
-  await loadTimesheets();
-});
+$("gradeFilter")
+  .addEventListener(
+    "change",
+    applyFilters
+  );
 
-$("searchBox").addEventListener("input", applyFilters);
-$("gradeFilter").addEventListener("change", applyFilters);
-$("typeFilter").addEventListener("change", applyFilters);
+$("typeFilter")
+  .addEventListener(
+    "change",
+    applyFilters
+  );
 
 (async function initialise() {
-  const session = await getSession();
+
+  const session =
+    await getSession();
 
   if (session) {
     await showDashboard();
   }
+
 })();
 </script>
 
