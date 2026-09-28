@@ -578,6 +578,8 @@ tr:hover td {
           PAYROLL EXPORTS: APPROVED SHIFTS ONLY
         </span>
 
+        <button id="rejectionsExcelBtn" class="btn-light">DOWNLOAD REJECTIONS REPORT</button>
+
         <button id="weeklyExcelBtn" class="btn-green">
           DOWNLOAD WEEKLY EXCEL
         </button>
@@ -647,6 +649,7 @@ const sb = supabase.createClient(
 
 let rawTimesheets = [];
 let displayedRows = [];
+let reviewerMap = {};
 
 const $ = id => document.getElementById(id);
 
@@ -917,6 +920,7 @@ async function loadTimesheets() {
       await callAccountsFunction(request);
 
     rawTimesheets = result.timesheets || [];
+    reviewerMap = result.reviewers || {};
 
     rawTimesheets.sort((a, b) => {
       const weekCompare =
@@ -1019,6 +1023,10 @@ function flattenTimesheets() {
 
         shift_rejection_reason:
           shift.rejection_reason || "",
+        shift_approved_by:shift.approved_by || "",
+        shift_approved_at:shift.approved_at || "",
+        extras_reviewed_by:shift.extras_reviewed_by || "",
+        extras_reviewed_at:shift.extras_reviewed_at || "",
 
         timesheet_approval_status:
           ts.approval_status || "PENDING",
@@ -1027,7 +1035,8 @@ function flattenTimesheets() {
           ts.rejection_reason || "",
 
         timesheet_approved_at:
-          ts.approved_at || ""
+          ts.approved_at || "",
+        timesheet_approved_by:ts.approved_by || ""
       });
     });
   });
@@ -1117,6 +1126,9 @@ function renderSummary() {
       r => r.hotel
     ).length;
 }
+
+function reviewerName(id){return reviewerMap[id] || (id ? "Accounts" : "")}
+function reviewNote(id,at){if(!id)return "";return '<div style="margin-top:4px;font-size:11px;color:var(--muted)">by '+escapeHtml(reviewerName(id))+(at?' • '+escapeHtml(formatDateTime(at)):'')+'</div>'}
 
 function approvalBadge(status) {
   const value =
@@ -1426,6 +1438,7 @@ function renderTable() {
           ${approvalBadge(
             row.shift_approval_status
           )}
+          ${row.shift_approval_status !== "PENDING" ? reviewNote(row.shift_approved_by,row.shift_approved_at) : ""}
 
           ${
             row.shift_rejection_reason
@@ -1953,6 +1966,39 @@ function downloadExcel(
     filename
   );
 }
+
+function rejectionRows(rows) {
+  const out = [];
+  const add = (r,item,reason,who,at) => out.push({
+    "Operative":r.operative,
+    "Timesheet Week":formatDate(r.week_start)+" – "+formatDate(r.week_end),
+    "Shift Date":formatDate(r.date),
+    "Job Number":r.job_number,
+    "Job / Location":r.job_location,
+    "Rejected Item":item,
+    "Reason":reason,
+    "Rejected By":reviewerName(who),
+    "Rejected At":at ? formatDateTime(at) : ""
+  });
+  rows.forEach(r => {
+    if(r.shift_approval_status==="REJECTED") add(r,"SHIFT",r.shift_rejection_reason,r.shift_approved_by,r.shift_approved_at);
+    if(r.out_zone_approval==="REJECTED") add(r,"OUT OF ZONE",r.out_zone_reason,r.extras_reviewed_by,r.extras_reviewed_at);
+    if(r.towing_approval==="REJECTED") add(r,"TOWING",r.towing_reason,r.extras_reviewed_by,r.extras_reviewed_at);
+    if(r.yard_approval==="REJECTED") add(r,"YARD LOADING / UNLOADING",r.yard_reason,r.extras_reviewed_by,r.extras_reviewed_at);
+    if(r.hotel_approval==="REJECTED") add(r,"STAYING AWAY / HOTEL",r.hotel_reason,r.extras_reviewed_by,r.extras_reviewed_at);
+  });
+  return out;
+}
+$("rejectionsExcelBtn").addEventListener("click", () => {
+  const rows = rejectionRows(flattenTimesheets());
+  if(!rows.length){alert("There are no rejected shifts or additional payment claims in the selected period.");return}
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws["!autofilter"]={ref:ws["!ref"]};
+  ws["!cols"]=[{wch:24},{wch:28},{wch:14},{wch:15},{wch:30},{wch:25},{wch:45},{wch:28},{wch:20}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"Rejections");
+  XLSX.writeFile(wb,"HRS Rail Rejections Report.xlsx");
+});
 
 $("weeklyExcelBtn")
   .addEventListener(
