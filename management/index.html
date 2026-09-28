@@ -68,6 +68,19 @@ function weekendRate(date,start){let d=new Date(date+'T'+(start||'12:00')+':00')
 addOt.onclick=()=>{if(!otDate.value||!otJob.value.trim()||!otNo.value.trim()||!otStart.value||!otEnd.value){alert('Complete all overtime shift details.');return}ots.push({date:otDate.value,job:otJob.value.trim(),jobNo:otNo.value.trim(),start:otStart.value,end:otEnd.value,rate:weekendRate(otDate.value,otStart.value)?'WEEKEND':'MIDWEEK'});otJob.value='';otNo.value='';otStart.value='';otEnd.value='';update()}
 function update(){let sh=0,hd=0,ud=0;Object.values(records).forEach(r=>{if(r.type==='SALARY')sh+=hours(r.start,r.end);if(r.type==='HOLIDAY_FULL')hd++;if(r.type==='HOLIDAY_HALF'){hd+=.5;sh+=hours(r.start,r.end)}if(r.type==='UNPAID')ud++});salaryHours.textContent=sh.toFixed(1);holidayDays.textContent=hd;unpaidDays.textContent=ud;otCount.textContent=ots.length;let mid=ots.filter(x=>x.rate==='MIDWEEK').length,wk=ots.filter(x=>x.rate==='WEEKEND').length;otBreakdown.textContent='Midweek OT: '+mid+' shift'+(mid===1?'':'s')+' • Weekend OT: '+wk+' shift'+(wk===1?'':'s');otList.innerHTML=ots.map((o,i)=>'<div class="ot"><b>OVERTIME – '+o.rate+'</b><br>'+new Date(o.date+'T12:00').toLocaleDateString('en-GB')+' | '+o.start+'–'+o.end+'<br>'+o.job+' | '+o.jobNo+'<br><button type="button" onclick="ots.splice('+i+',1);update()" class="danger">Remove</button></div>').join('')}
 document.getElementById('applyPattern').addEventListener('click',build);month.onchange=()=>{renderPay();build()};nameEl.onchange=save;
-submit.onclick=()=>{notice.textContent='Prototype only – submission/database connection will be added after the form is approved.';if(!confirm.checked)alert('Please confirm the timesheet is accurate first.')};
+submit.onclick=async()=>{
+ if(!confirm.checked){alert('Please confirm the timesheet is accurate first.');return}
+ if(nameEl.value.trim().split(/\\s+/).length<2){alert('Please enter your full first name and surname.');return}
+ submit.disabled=true;notice.textContent='Submitting...';
+ const payload={employee_name:nameEl.value.trim(),timesheet_month:month.value,normal_working_days:[...document.querySelectorAll('.daybtn.on')].map(b=>+b.dataset.day),normal_start:normalStart.value,normal_end:normalEnd.value,confirmed_accurate:true,days:Object.entries(records).map(([date,r])=>({date,...r})),overtime:ots};
+ try{
+  const res=await fetch('https://ihvpvtymlquntajbsvrx.supabase.co/functions/v1/submit-management-timesheet',{method:'POST',headers:{'Content-Type':'application/json','apikey':'sb_publishable_lTdwf5SjJfogmd-umaAtsg_z9xpJuOe','Authorization':'Bearer sb_publishable_lTdwf5SjJfogmd-umaAtsg_z9xpJuOe'},body:JSON.stringify(payload)});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(data.error||'Submission failed.');
+  notice.textContent='Management timesheet submitted successfully.';
+  alert('Management timesheet submitted successfully.');
+ }catch(e){notice.textContent=e.message||'Submission failed.';alert(notice.textContent)}
+ finally{submit.disabled=false}
+};
 load();
 </script></body></html>
