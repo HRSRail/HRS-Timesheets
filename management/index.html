@@ -70,11 +70,12 @@ function update(){let sh=0,hd=0,ud=0;Object.values(records).forEach(r=>{if(r.typ
 document.getElementById('applyPattern').addEventListener('click',build);month.onchange=()=>{renderPay();build()};nameEl.onchange=save;
 submitBtn.onclick=async()=>{
  if(!confirmEl.checked){alert('Please confirm the timesheet is accurate first.');return}
- if(nameEl.value.trim().split(/\\s+/).length<2){alert('Please enter your full first name and surname.');return}
+ const employeeName=nameEl.value.trim();
+ if(!employeeName || employeeName.indexOf(' ')<1 || employeeName.split(' ').filter(Boolean).length<2){alert('Please enter your full first name and surname.');return}
  const incompleteSiteShift=Object.values(records).some(r=>r.type==='SALARY'&&r.changed&&(!r.job||!r.jobNo));
  if(incompleteSiteShift){alert('Every changed salary/site shift must have a Job Name / Location and Job Number before submission.');return}
  submitBtn.disabled=true;notice.textContent='Submitting...';
- const payload={employee_name:nameEl.value.trim(),timesheet_month:month.value,normal_working_days:[...document.querySelectorAll('.daybtn.on')].map(b=>+b.dataset.day),normal_start:normalStart.value,normal_end:normalEnd.value,confirmed_accurate:true,days:Object.entries(records).map(([date,r])=>({date,...r})),overtime:ots};
+ const payload={employee_name:employeeName,timesheet_month:month.value,normal_working_days:[...document.querySelectorAll('.daybtn.on')].map(b=>+b.dataset.day),normal_start:normalStart.value,normal_end:normalEnd.value,confirmed_accurate:true,days:Object.entries(records).map(([date,r])=>({date,...r})),overtime:ots};
  try{
   const res=await fetch('https://ihvpvtymlquntajbsvrx.supabase.co/functions/v1/submit-management-timesheet',{method:'POST',headers:{'Content-Type':'application/json','apikey':'sb_publishable_lTdwf5SjJfogmd-umaAtsg_z9xpJuOe','Authorization':'Bearer sb_publishable_lTdwf5SjJfogmd-umaAtsg_z9xpJuOe'},body:JSON.stringify(payload)});
   const data=await res.json().catch(()=>({}));
