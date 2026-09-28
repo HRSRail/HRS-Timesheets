@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HRS Rail Management Timesheet</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#eef1f3;font-family:Arial,sans-serif;color:#172027}.head{background:#20282e;color:#fff;padding:24px 18px}.head h1{margin:0;font-size:25px}.head p{margin:5px 0 0;color:#cfd6da}.wrap{max-width:760px;margin:auto;padding:16px}.card{background:#fff;border-radius:14px;padding:16px;margin:0 0 14px;box-shadow:0 2px 8px #0001}label{display:block;font-weight:700;margin:11px 0 5px}input,select,button{font:inherit}input,select{width:100%;padding:11px;border:1px solid #cbd2d6;border-radius:9px}.days{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.daybtn,.typebtn{border:1px solid #c7ced2;background:#f7f8f8;padding:10px 4px;border-radius:9px}.daybtn.on,.typebtn.on{background:#20282e;color:#fff}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.primary{width:100%;border:0;border-radius:10px;padding:14px;background:#18864b;color:white;font-weight:800}.secondary{width:100%;border:1px solid #18864b;border-radius:10px;padding:11px;background:white;color:#146b3d;font-weight:800}.week{border-top:1px solid #e2e6e8;padding-top:12px;margin-top:12px}.week:first-child{border:0;margin-top:0;padding-top:0}.dayline{padding:9px 0;border-bottom:1px solid #eef0f1}.tag{font-size:12px;font-weight:800;background:#edf1f3;padding:4px 7px;border-radius:6px}.ot{background:#fff8e7;border:1px solid #efd48b;border-radius:10px;padding:12px;margin-top:10px}.summary{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stat{background:#f4f6f7;border-radius:9px;padding:10px}.muted{color:#69757d;font-size:13px}.hidden{display:none}.holiday{margin-top:7px}.salaryEdit{background:#f4f6f7;border-radius:9px;padding:10px;margin-top:8px}.salaryEdit .row{margin-top:6px}.small{font-size:13px}h2{font-size:18px;margin:0 0 10px}h3{font-size:16px;margin:4px 0}.danger{color:#a12626}.deadline{font-weight:800;margin-top:8px}
+*{box-sizing:border-box}body{margin:0;background:#eef1f3;font-family:Arial,sans-serif;color:#172027}.head{background:#20282e;color:#fff;padding:24px 18px}.head h1{margin:0;font-size:25px}.head p{margin:5px 0 0;color:#cfd6da}.wrap{max-width:760px;margin:auto;padding:16px}.card{background:#fff;border-radius:14px;padding:16px;margin:0 0 14px;box-shadow:0 2px 8px #0001}label{display:block;font-weight:700;margin:11px 0 5px}input,select,button{font:inherit}input,select{width:100%;padding:11px;border:1px solid #cbd2d6;border-radius:9px}.days{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.daybtn,.typebtn{border:1px solid #c7ced2;background:#f7f8f8;padding:10px 4px;border-radius:9px}.daybtn.on,.typebtn.on{background:#20282e;color:#fff}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.primary{width:100%;border:0;border-radius:10px;padding:14px;background:#18864b;color:white;font-weight:800}.secondary{width:100%;border:1px solid #18864b;border-radius:10px;padding:11px;background:white;color:#146b3d;font-weight:800}.week{border-top:1px solid #e2e6e8;padding-top:12px;margin-top:12px}.week:first-child{border:0;margin-top:0;padding-top:0}.dayline{padding:9px 0;border-bottom:1px solid #eef0f1}.tag{font-size:12px;font-weight:800;background:#edf1f3;padding:4px 7px;border-radius:6px}.ot{background:#fff8e7;border:1px solid #efd48b;border-radius:10px;padding:12px;margin-top:10px}.summary{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stat{background:#f4f6f7;border-radius:9px;padding:10px}.muted{color:#69757d;font-size:13px}.hidden{display:none}.holiday{margin-top:7px}.salaryEdit{background:#f4f6f7;border-radius:9px;padding:10px;margin-top:8px}.salaryEdit .row{margin-top:6px}.small{font-size:13px}h2{font-size:18px;margin:0 0 10px}h3{font-size:16px;margin:4px 0}.danger{color:#a12626}.deadline{font-weight:800;margin-top:8px}.downloadBox{display:none;background:#eaf7ef;border:1px solid #b9dfc8;padding:16px;border-radius:12px;margin-top:14px;text-align:center}.downloadBox b{display:block;font-size:17px;margin-bottom:6px}.downloadBtn{display:block;width:100%;padding:14px;margin-top:12px;border-radius:10px;background:#17202a;color:white;text-decoration:none;font-weight:800;font-size:15px}.downloadBox small{display:block;margin-top:10px;color:#52606b}
 </style></head>
 <body>
 <div class="head"><h1>HRS RAIL</h1><p>Management Monthly Timesheet</p></div>
@@ -41,7 +41,7 @@
 </div><p class="muted" id="otBreakdown"></p>
 <label style="font-weight:normal"><input id="confirm" type="checkbox" style="width:auto"> I confirm this timesheet is accurate.</label>
 <button class="primary" id="submit">SUBMIT MONTHLY TIMESHEET</button>
-<p class="muted" id="notice"></p>
+<p class="muted" id="notice"></p><div id="downloadBox" class="downloadBox"><b>✓ TIMESHEET SUCCESSFULLY SUBMITTED</b><div>Your monthly management timesheet has been sent to HRS Rail.</div><a id="downloadPdf" class="downloadBtn" href="#" target="_blank" rel="noopener">DOWNLOAD MY TIMESHEET PDF</a><small>We recommend saving a copy for your own records. The secure download link is temporary.</small></div>
 </div></div>
 <script>
 const D=['Mon','Tue','Wed','Thu','Fri']; const dayBox=document.getElementById('days'); const nameEl=document.getElementById('employeeName'); const confirmEl=document.getElementById('confirm'); const submitBtn=document.getElementById('submit');
@@ -80,15 +80,12 @@ submitBtn.onclick=async()=>{
   const res=await fetch('https://ihvpvtymlquntajbsvrx.supabase.co/functions/v1/submit-management-timesheet',{method:'POST',headers:{'Content-Type':'application/json','apikey':'sb_publishable_lTdwf5SjJfogmd-umaAtsg_z9xpJuOe','Authorization':'Bearer sb_publishable_lTdwf5SjJfogmd-umaAtsg_z9xpJuOe'},body:JSON.stringify(payload)});
   const data=await res.json().catch(()=>({}));
   if(!res.ok)throw new Error(data.error||'Submission failed.');
-  notice.textContent='Management timesheet submitted successfully and sent to HRS Rail.';
+  notice.textContent='';
   if(data.pdf_download_url){
-    const a=document.createElement('a');
-    a.href=data.pdf_download_url;
-    a.textContent='DOWNLOAD SUBMITTED PDF';
-    a.target='_blank'; a.rel='noopener';
-    a.style.display='block'; a.style.marginTop='10px'; a.style.fontWeight='800';
-    notice.appendChild(document.createElement('br')); notice.appendChild(a);
-  }
+    downloadPdf.href=data.pdf_download_url;
+    downloadBox.style.display='block';
+    downloadBox.scrollIntoView({behavior:'smooth',block:'center'});
+  }else{downloadBox.style.display='none'}
   alert('Management timesheet submitted successfully and sent to HRS Rail.');
  }catch(e){notice.textContent=e.message||'Submission failed.';alert(notice.textContent)}
  finally{submitBtn.disabled=false}
