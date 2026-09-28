@@ -1023,6 +1023,7 @@ function flattenTimesheets() {
 
         shift_rejection_reason:
           shift.rejection_reason || "",
+        pay_status:shift.pay_status || "FULL SHIFT",
         shift_approved_by:shift.approved_by || "",
         shift_approved_at:shift.approved_at || "",
         extras_reviewed_by:shift.extras_reviewed_by || "",
@@ -1310,31 +1311,21 @@ function renderTable() {
           `
           : "—";
 
+      const shiftMinutes = (() => {
+        const [sh,sm] = row.start.split(":").map(Number);
+        const [eh,em] = row.finish.split(":").map(Number);
+        let mins = (eh*60+em) - (sh*60+sm);
+        if (mins <= 0) mins += 1440;
+        return mins;
+      })();
+      const partThreshold = row.type === "WEEKEND" ? 360 : 300;
+      const partEligible = row.type !== "ECO" && shiftMinutes < partThreshold;
       const shiftActions = `
         <div class="approval-actions">
-
-          <button
-            class="btn-approve btn-small"
-            onclick="
-              approveShift(
-                '${row.shift_id}'
-              )
-            "
-          >
-            APPROVE
-          </button>
-
-          <button
-            class="btn-reject btn-small"
-            onclick="
-              rejectShift(
-                '${row.shift_id}'
-              )
-            "
-          >
-            REJECT
-          </button>
-
+          <button class="btn-approve btn-small" onclick="approveShift('${row.shift_id}')">APPROVE</button>
+          ${partEligible ? `<button class="btn-small" style="background:#f0ad32;color:#202426;border:0;font-weight:800" onclick="partShift('${row.shift_id}')">PART SHIFT</button>` : ""}
+          <button class="btn-reject btn-small" onclick="rejectShift('${row.shift_id}')">REJECT</button>
+          ${row.pay_status === "PART SHIFT" ? '<div style="margin-top:5px;font-weight:900;color:#a55d00">⚠ PART SHIFT PAY</div>' : ""}
         </div>
       `;
 
@@ -1602,6 +1593,14 @@ function renderTable() {
       }
     }
   );
+}
+
+async function partShift(shiftId) {
+  if (!confirm("Mark this as PART SHIFT PAY and approve it?")) return;
+  try {
+    await callAccountsFunction({action:"part_shift",shift_id:shiftId});
+    await loadTimesheets();
+  } catch (err) { alert(err.message); }
 }
 
 async function approveShift(shiftId) {
@@ -1894,6 +1893,9 @@ function excelRows(rows) {
 
     "Shift Approval":
       row.shift_approval_status,
+
+    "Pay Status":
+      row.pay_status,
 
     "Timesheet Status":
       row.timesheet_approval_status
