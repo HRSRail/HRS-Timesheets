@@ -44,7 +44,7 @@
 <p class="muted" id="notice"></p>
 </div></div>
 <script>
-const D=['Mon','Tue','Wed','Thu','Fri']; const dayBox=document.getElementById('days'); const nameEl=document.getElementById('name');
+const D=['Mon','Tue','Wed','Thu','Fri']; const dayBox=document.getElementById('days'); const nameEl=document.getElementById('name'); const confirmEl=document.getElementById('confirm');
 D.forEach((x,i)=>{let b=document.createElement('button');b.type='button';b.className='daybtn on';b.textContent=x;b.dataset.day=i+1;b.onclick=()=>b.classList.toggle('on');dayBox.appendChild(b)});
 const pad=n=>String(n).padStart(2,'0'), iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 function hours(a,b){if(!a||!b)return 0;let [ah,am]=a.split(':').map(Number),[bh,bm]=b.split(':').map(Number),x=(bh*60+bm)-(ah*60+am);if(x<=0)x+=1440;return x/60}
@@ -69,7 +69,7 @@ addOt.onclick=()=>{if(!otDate.value||!otJob.value.trim()||!otNo.value.trim()||!o
 function update(){let sh=0,hd=0,ud=0;Object.values(records).forEach(r=>{if(r.type==='SALARY')sh+=hours(r.start,r.end);if(r.type==='HOLIDAY_FULL')hd++;if(r.type==='HOLIDAY_HALF'){hd+=.5;sh+=hours(r.start,r.end)}if(r.type==='UNPAID')ud++});salaryHours.textContent=sh.toFixed(1);holidayDays.textContent=hd;unpaidDays.textContent=ud;otCount.textContent=ots.length;let mid=ots.filter(x=>x.rate==='MIDWEEK').length,wk=ots.filter(x=>x.rate==='WEEKEND').length;otBreakdown.textContent='Midweek OT: '+mid+' shift'+(mid===1?'':'s')+' • Weekend OT: '+wk+' shift'+(wk===1?'':'s');otList.innerHTML=ots.map((o,i)=>'<div class="ot"><b>OVERTIME – '+o.rate+'</b><br>'+new Date(o.date+'T12:00').toLocaleDateString('en-GB')+' | '+o.start+'–'+o.end+'<br>'+o.job+' | '+o.jobNo+'<br><button type="button" onclick="ots.splice('+i+',1);update()" class="danger">Remove</button></div>').join('')}
 document.getElementById('applyPattern').addEventListener('click',build);month.onchange=()=>{renderPay();build()};nameEl.onchange=save;
 submit.onclick=async()=>{
- if(!confirm.checked){alert('Please confirm the timesheet is accurate first.');return}
+ if(!confirmEl.checked){alert('Please confirm the timesheet is accurate first.');return}
  if(nameEl.value.trim().split(/\\s+/).length<2){alert('Please enter your full first name and surname.');return}
  const incompleteSiteShift=Object.values(records).some(r=>r.type==='SALARY'&&r.changed&&(!r.job||!r.jobNo));
  if(incompleteSiteShift){alert('Every changed salary/site shift must have a Job Name / Location and Job Number before submission.');return}
