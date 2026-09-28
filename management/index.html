@@ -80,8 +80,16 @@ submitBtn.onclick=async()=>{
   const res=await fetch('https://ihvpvtymlquntajbsvrx.supabase.co/functions/v1/submit-management-timesheet',{method:'POST',headers:{'Content-Type':'application/json','apikey':'sb_publishable_lTdwf5SjJfogmd-umaAtsg_z9xpJuOe','Authorization':'Bearer sb_publishable_lTdwf5SjJfogmd-umaAtsg_z9xpJuOe'},body:JSON.stringify(payload)});
   const data=await res.json().catch(()=>({}));
   if(!res.ok)throw new Error(data.error||'Submission failed.');
-  notice.textContent='Management timesheet submitted successfully.';
-  alert('Management timesheet submitted successfully.');
+  notice.textContent='Management timesheet submitted successfully and sent to HRS Rail.';
+  if(data.pdf_download_url){
+    const a=document.createElement('a');
+    a.href=data.pdf_download_url;
+    a.textContent='DOWNLOAD SUBMITTED PDF';
+    a.target='_blank'; a.rel='noopener';
+    a.style.display='block'; a.style.marginTop='10px'; a.style.fontWeight='800';
+    notice.appendChild(document.createElement('br')); notice.appendChild(a);
+  }
+  alert('Management timesheet submitted successfully and sent to HRS Rail.');
  }catch(e){notice.textContent=e.message||'Submission failed.';alert(notice.textContent)}
  finally{submitBtn.disabled=false}
 };
