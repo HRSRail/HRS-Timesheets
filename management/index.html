@@ -70,8 +70,8 @@ function update(){let sh=0,hd=0,ud=0;Object.values(records).forEach(r=>{if(r.typ
 document.getElementById('applyPattern').addEventListener('click',build);month.onchange=()=>{renderPay();build()};nameEl.onchange=save;
 submitBtn.onclick=async()=>{
  if(!confirmEl.checked){alert('Please confirm the timesheet is accurate first.');return}
- const employeeName=nameEl.value.trim();
- if(!employeeName || employeeName.indexOf(' ')<1 || employeeName.split(' ').filter(Boolean).length<2){alert('Please enter your full first name and surname.');return}
+ const employeeName=document.getElementById('employeeName').value.trim();
+ if(employeeName.length<3){alert('Please enter your full name.');return}
  const incompleteSiteShift=Object.values(records).some(r=>r.type==='SALARY'&&r.changed&&(!r.job||!r.jobNo));
  if(incompleteSiteShift){alert('Every changed salary/site shift must have a Job Name / Location and Job Number before submission.');return}
  submitBtn.disabled=true;notice.textContent='Submitting...';
