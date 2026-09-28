@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HRS Rail Management Timesheet</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#eef1f3;font-family:Arial,sans-serif;color:#172027}.head{background:#20282e;color:#fff;padding:24px 18px}.head h1{margin:0;font-size:25px}.head p{margin:5px 0 0;color:#cfd6da}.wrap{max-width:760px;margin:auto;padding:16px}.card{background:#fff;border-radius:14px;padding:16px;margin:0 0 14px;box-shadow:0 2px 8px #0001}label{display:block;font-weight:700;margin:11px 0 5px}input,select,button{font:inherit}input,select{width:100%;padding:11px;border:1px solid #cbd2d6;border-radius:9px}.days{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.daybtn,.typebtn{border:1px solid #c7ced2;background:#f7f8f8;padding:10px 4px;border-radius:9px}.daybtn.on,.typebtn.on{background:#20282e;color:#fff}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.primary{width:100%;border:0;border-radius:10px;padding:14px;background:#18864b;color:white;font-weight:800}.secondary{width:100%;border:1px solid #18864b;border-radius:10px;padding:11px;background:white;color:#146b3d;font-weight:800}.week{border-top:1px solid #e2e6e8;padding-top:12px;margin-top:12px}.week:first-child{border:0;margin-top:0;padding-top:0}.dayline{padding:9px 0;border-bottom:1px solid #eef0f1}.tag{font-size:12px;font-weight:800;background:#edf1f3;padding:4px 7px;border-radius:6px}.ot{background:#fff8e7;border:1px solid #efd48b;border-radius:10px;padding:12px;margin-top:10px}.summary{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stat{background:#f4f6f7;border-radius:9px;padding:10px}.muted{color:#69757d;font-size:13px}.hidden{display:none}.holiday{margin-top:7px}.small{font-size:13px}h2{font-size:18px;margin:0 0 10px}h3{font-size:16px;margin:4px 0}.danger{color:#a12626}.deadline{font-weight:800;margin-top:8px}
+</style></head>
+<body>
+<div class="head"><h1>HRS RAIL</h1><p>Management Monthly Timesheet</p></div>
+<div class="wrap">
+<div class="card">
+<h2>Your details</h2>
+<label>Full Name</label><input id="name" autocomplete="name" placeholder="First name and surname">
+<label>Timesheet Month</label><input id="month" type="month">
+<p class="muted" id="payInfo"></p>
+</div>
+<div class="card">
+<h2>Normal working pattern</h2>
+<p class="muted">Select your normal salaried working days. These will populate automatically. Your settings are remembered on this device.</p>
+<div class="days" id="days"></div>
+<div class="row"><div><label>Normal Start</label><input id="normalStart" type="time" value="07:00"></div><div><label>Normal Finish</label><input id="normalEnd" type="time" value="17:00"></div></div>
+<button class="secondary" id="build" style="margin-top:12px">APPLY WORKING PATTERN</button>
+</div>
+<div id="weeks"></div>
+<div class="card">
+<h2>Add Overtime Shift</h2>
+<p class="muted">Overtime is separate from salary hours and is the only item requiring approval.</p>
+<label>Date</label><input id="otDate" type="date">
+<label>Job Name / Location</label><input id="otJob" placeholder="e.g. East Ham">
+<label>Job Number</label><input id="otNo" placeholder="Job number">
+<div class="row"><div><label>Start</label><input id="otStart" type="time"></div><div><label>Finish</label><input id="otEnd" type="time"></div></div>
+<button class="secondary" id="addOt" style="margin-top:12px">+ ADD OVERTIME</button>
+<div id="otList"></div>
+</div>
+<div class="card"><h2>Monthly Summary</h2><div class="summary">
+<div class="stat"><b id="salaryHours">0.0</b><br><span class="muted">Salary hours</span></div>
+<div class="stat"><b id="holidayDays">0</b><br><span class="muted">Holiday days</span></div>
+<div class="stat"><b id="unpaidDays">0</b><br><span class="muted">Unpaid days</span></div>
+<div class="stat"><b id="otCount">0</b><br><span class="muted">Overtime shifts</span></div>
+</div><p class="muted" id="otBreakdown"></p>
+<label style="font-weight:normal"><input id="confirm" type="checkbox" style="width:auto"> I confirm this timesheet is accurate.</label>
+<button class="primary" id="submit">SUBMIT MONTHLY TIMESHEET</button>
+<p class="muted" id="notice"></p>
+</div></div>
+<script>
+const D=['Mon','Tue','Wed','Thu','Fri']; const dayBox=document.getElementById('days');
+D.forEach((x,i)=>{let b=document.createElement('button');b.type='button';b.className='daybtn on';b.textContent=x;b.dataset.day=i+1;b.onclick=()=>b.classList.toggle('on');dayBox.appendChild(b)});
+const pad=n=>String(n).padStart(2,'0'), iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+function hours(a,b){if(!a||!b)return 0;let [ah,am]=a.split(':').map(Number),[bh,bm]=b.split(':').map(Number),x=(bh*60+bm)-(ah*60+am);if(x<=0)x+=1440;return x/60}
+function load(){let p=JSON.parse(localStorage.getItem('hrsMgmtProfile')||'{}');if(p.name)name.value=p.name;if(p.start)normalStart.value=p.start;if(p.end)normalEnd.value=p.end;if(p.days){document.querySelectorAll('.daybtn').forEach(b=>b.classList.toggle('on',p.days.includes(+b.dataset.day)))}let n=new Date();month.value=n.getFullYear()+'-'+pad(n.getMonth()+1);renderPay();build()}
+function save(){localStorage.setItem('hrsMgmtProfile',JSON.stringify({name:name.value.trim(),start:normalStart.value,end:normalEnd.value,days:[...document.querySelectorAll('.daybtn.on')].map(b=>+b.dataset.day)}))}
+function renderPay(){let [y,m]=month.value.split('-').map(Number);if(!y)return;let payday=new Date(y,m,0),d=new Date(payday),count=0;while(count<3){d.setDate(d.getDate()-1);if(d.getDay()!=0&&d.getDay()!=6)count++}payInfo.innerHTML='Payday: <b>'+payday.toLocaleDateString('en-GB')+'</b> &nbsp;•&nbsp; Submission deadline: <b>'+d.toLocaleDateString('en-GB')+'</b><br><span class="small">Deadline is 3 Monday-Friday working days before payday. Overtime can still be recorded on weekends and bank holidays.</span>'}
+let records={},ots=[];
+function build(){save();records={};weeks.innerHTML='';let [y,m]=month.value.split('-').map(Number);if(!y)return;let first=new Date(y,m-1,1),last=new Date(y,m,0),selected=[...document.querySelectorAll('.daybtn.on')].map(b=>+b.dataset.day);for(let d=new Date(first);d<=last;d.setDate(d.getDate()+1)){let key=iso(d),js=d.getDay(),wd=js===0?7:js;if(selected.includes(wd))records[key]={type:'SALARY',start:normalStart.value,end:normalEnd.value}}
+let cursor=new Date(first);cursor.setDate(cursor.getDate()-((cursor.getDay()+6)%7));while(cursor<=last){let end=new Date(cursor);end.setDate(end.getDate()+6);let c=document.createElement('div');c.className='card week';c.innerHTML='<h3>'+cursor.toLocaleDateString('en-GB')+' – '+end.toLocaleDateString('en-GB')+'</h3>';for(let d=new Date(cursor);d<=end;d.setDate(d.getDate()+1)){if(d<first||d>last)continue;let key=iso(d),r=records[key];let line=document.createElement('div');line.className='dayline';line.innerHTML='<b>'+d.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'})+'</b> <span class="tag">'+(r?'SALARY':'NON-WORKING')+'</span>'+(r?' <span class="small">'+r.start+'–'+r.end+'</span>':'')+'<div class="holiday"><select data-date="'+key+'"><option value="'+(r?'SALARY':'OFF')+'">'+(r?'Salary':'Non-working')+'</option><option value="HOLIDAY_FULL">Holiday – Full Day</option><option value="HOLIDAY_HALF">Holiday – Half Day</option><option value="UNPAID">Unpaid Day</option></select></div>';line.querySelector('select').onchange=e=>changeDay(e.target);c.appendChild(line)}weeks.appendChild(c);cursor.setDate(cursor.getDate()+7)}update()}
+function changeDay(s){let k=s.dataset.date,v=s.value;if(v==='SALARY')records[k]={type:'SALARY',start:normalStart.value,end:normalEnd.value};else if(v==='HOLIDAY_HALF'){let st=prompt('Hours actually worked - start time (HH:MM)',normalStart.value)||'';let en=prompt('Hours actually worked - finish time (HH:MM)','')||'';records[k]={type:v,start:st,end:en}}else if(v==='OFF')delete records[k];else records[k]={type:v};update()}
+function weekendRate(date,start){let d=new Date(date+'T'+(start||'12:00')+':00'),day=d.getDay(),mins=d.getHours()*60+d.getMinutes();return day===6||day===0||(day===5&&mins>=1080)||(day===1&&mins<360)}
+addOt.onclick=()=>{if(!otDate.value||!otJob.value.trim()||!otNo.value.trim()||!otStart.value||!otEnd.value){alert('Complete all overtime shift details.');return}ots.push({date:otDate.value,job:otJob.value.trim(),jobNo:otNo.value.trim(),start:otStart.value,end:otEnd.value,rate:weekendRate(otDate.value,otStart.value)?'WEEKEND':'MIDWEEK'});otJob.value='';otNo.value='';otStart.value='';otEnd.value='';update()}
+function update(){let sh=0,hd=0,ud=0;Object.values(records).forEach(r=>{if(r.type==='SALARY')sh+=hours(r.start,r.end);if(r.type==='HOLIDAY_FULL')hd++;if(r.type==='HOLIDAY_HALF'){hd+=.5;sh+=hours(r.start,r.end)}if(r.type==='UNPAID')ud++});salaryHours.textContent=sh.toFixed(1);holidayDays.textContent=hd;unpaidDays.textContent=ud;otCount.textContent=ots.length;let mid=ots.filter(x=>x.rate==='MIDWEEK').length,wk=ots.filter(x=>x.rate==='WEEKEND').length;otBreakdown.textContent='Midweek OT: '+mid+' shift'+(mid===1?'':'s')+' • Weekend OT: '+wk+' shift'+(wk===1?'':'s');otList.innerHTML=ots.map((o,i)=>'<div class="ot"><b>OVERTIME – '+o.rate+'</b><br>'+new Date(o.date+'T12:00').toLocaleDateString('en-GB')+' | '+o.start+'–'+o.end+'<br>'+o.job+' | '+o.jobNo+'<br><button type="button" onclick="ots.splice('+i+',1);update()" class="danger">Remove</button></div>').join('')}
+build.onclick=build;month.onchange=()=>{renderPay();build()};name.onchange=save;
+submit.onclick=()=>{notice.textContent='Prototype only – submission/database connection will be added after the form is approved.';if(!confirm.checked)alert('Please confirm the timesheet is accurate first.')};
+load();
+</script></body></html>
