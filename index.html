@@ -242,7 +242,18 @@ function fmt(d){
 
 function currentTimesheetWeekStart(){
 
- const d=new Date();
+ const now=new Date();
+
+ const d=new Date(now);
+
+ /*
+   On Monday mornings, keep the previous Monday-Sunday
+   timesheet open until the 12:00 submission deadline.
+   At 12:00 Monday, roll forward to the new week.
+ */
+ if(now.getDay()===1 && now.getHours()<12){
+  d.setDate(d.getDate()-7);
+ }
 
  d.setHours(12,0,0,0);
 
