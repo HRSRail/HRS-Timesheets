@@ -11,7 +11,7 @@
 <div class="wrap">
 <div class="card">
 <h2>Your details</h2>
-<label>Full Name</label><input id="name" autocomplete="name" placeholder="First name and surname">
+<label>Full Name</label><input id="employeeName" autocomplete="name" placeholder="First name and surname">
 <label>Timesheet Month</label><input id="month" type="month">
 <p class="muted" id="payInfo"></p>
 </div>
@@ -44,7 +44,7 @@
 <p class="muted" id="notice"></p>
 </div></div>
 <script>
-const D=['Mon','Tue','Wed','Thu','Fri']; const dayBox=document.getElementById('days'); const nameEl=document.getElementById('name'); const confirmEl=document.getElementById('confirm'); const submitBtn=document.getElementById('submit');
+const D=['Mon','Tue','Wed','Thu','Fri']; const dayBox=document.getElementById('days'); const nameEl=document.getElementById('employeeName'); const confirmEl=document.getElementById('confirm'); const submitBtn=document.getElementById('submit');
 D.forEach((x,i)=>{let b=document.createElement('button');b.type='button';b.className='daybtn on';b.textContent=x;b.dataset.day=i+1;b.onclick=()=>b.classList.toggle('on');dayBox.appendChild(b)});
 const pad=n=>String(n).padStart(2,'0'), iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 function hours(a,b){if(!a||!b)return 0;let [ah,am]=a.split(':').map(Number),[bh,bm]=b.split(':').map(Number),x=(bh*60+bm)-(ah*60+am);if(x<=0)x+=1440;return x/60}
