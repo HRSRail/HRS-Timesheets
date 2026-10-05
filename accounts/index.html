@@ -430,13 +430,21 @@ tr:hover td {
   .portal-tabs { padding-left:0; padding-right:0; }
   .table-wrap {
     overflow-x:auto;
+    overflow-y:visible;
     position:relative;
   }
   #timesheetTable { min-width:1900px; }
+  #timesheetTable thead {
+    position:sticky;
+    top:0;
+    z-index:20;
+  }
   #timesheetTable thead th {
     position:sticky;
     top:0;
-    z-index:4;
+    z-index:21;
+    background:var(--dark2);
+    box-shadow:0 2px 0 rgba(0,0,0,.18);
   }
   .top-scroll {
     overflow-x:auto;
