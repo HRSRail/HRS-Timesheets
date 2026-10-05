@@ -1582,6 +1582,14 @@ function renderTable() {
                   APPROVE WHOLE TIMESHEET
                 </button>
 
+                <button
+                  class="btn-reject btn-small"
+                  style="margin-left:8px"
+                  onclick="resetTimesheet('${row.timesheet_id}','${escapeHtml(row.operative)}','${formatDate(row.week_start)}','${formatDate(row.week_end)}')"
+                >
+                  DELETE / RESET TIMESHEET
+                </button>
+
               </div>
 
             </div>
@@ -1593,6 +1601,39 @@ function renderTable() {
       }
     }
   );
+}
+
+async function resetTimesheet(timesheetId, operative, weekStart, weekEnd) {
+  const first = confirm(
+    "RESET SUBMITTED TIMESHEET?\n\n" +
+    operative + "\n" + weekStart + " – " + weekEnd +
+    "\n\nThis will remove the submitted timesheet and PDF so the operative can submit the week again."
+  );
+  if (!first) return;
+
+  const reason = prompt("Reason for resetting this timesheet:");
+  if (reason === null) return;
+  if (!reason.trim()) {
+    alert("A reset reason is required.");
+    return;
+  }
+
+  const finalCheck = confirm(
+    "FINAL CONFIRMATION\n\nDelete/reset this submitted timesheet?\n\nAn audit record of the reset will be kept."
+  );
+  if (!finalCheck) return;
+
+  try {
+    await callAccountsFunction({
+      action:"reset_timesheet",
+      timesheet_id:timesheetId,
+      reason:reason.trim()
+    });
+    alert("Timesheet reset successfully. The operative can now submit this week again.");
+    await loadTimesheets();
+  } catch (err) {
+    alert(err.message);
+  }
 }
 
 async function partShift(shiftId) {
