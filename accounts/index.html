@@ -417,6 +417,37 @@ tr:hover td {
 
 .operative-divider td{background:var(--dark2)!important;color:white!important;padding:11px 10px!important;border-bottom:3px solid var(--green)!important;font-size:14px;font-weight:800;letter-spacing:.2px}.operative-divider:hover td{background:var(--dark2)!important}
 .portal-tabs{max-width:1450px;margin:18px auto 0;padding:0 18px;display:flex;gap:8px}.portal-tab{display:inline-block;padding:11px 16px;border-radius:7px;text-decoration:none;font-weight:800;background:#e3e6e7;color:#25292b}.portal-tab.active{background:#202426;color:#fff;border-bottom:4px solid #8bbd23}@media(max-width:600px){.portal-tabs{margin-top:12px}.portal-tab{flex:1;text-align:center;padding:10px 6px;font-size:12px}}
+
+/* Desktop wide-screen Accounts view */
+@media (min-width:1001px) {
+  .header-inner,
+  .portal-tabs,
+  .container {
+    max-width:none;
+    width:calc(100% - 32px);
+  }
+  .container { padding-left:0; padding-right:0; }
+  .portal-tabs { padding-left:0; padding-right:0; }
+  .table-wrap {
+    overflow-x:auto;
+    position:relative;
+  }
+  #timesheetTable { min-width:1900px; }
+  #timesheetTable thead th {
+    position:sticky;
+    top:0;
+    z-index:4;
+  }
+  .top-scroll {
+    overflow-x:auto;
+    overflow-y:hidden;
+    height:16px;
+    margin:0 0 6px;
+    border-radius:6px;
+  }
+  .top-scroll-inner { height:1px; }
+}
+
 </style>
 </head>
 
@@ -592,7 +623,9 @@ tr:hover td {
 
     <div id="dataMessage"></div>
 
-    <div class="table-wrap">
+    <div id="topTableScroll" class="top-scroll"><div id="topTableScrollInner" class="top-scroll-inner"></div></div>
+
+    <div class="table-wrap" id="tableWrap">
       <div id="loading" class="loading hidden">
         Loading timesheets...
       </div>
@@ -652,6 +685,17 @@ let displayedRows = [];
 let reviewerMap = {};
 
 const $ = id => document.getElementById(id);
+
+function syncDesktopTableScroll() {
+  const top = $("topTableScroll");
+  const wrap = $("tableWrap");
+  const table = $("timesheetTable");
+  const inner = $("topTableScrollInner");
+  if (!top || !wrap || !table || !inner) return;
+  inner.style.width = table.scrollWidth + "px";
+  top.onscroll = () => { if (wrap.scrollLeft !== top.scrollLeft) wrap.scrollLeft = top.scrollLeft; };
+  wrap.onscroll = () => { if (top.scrollLeft !== wrap.scrollLeft) top.scrollLeft = wrap.scrollLeft; };
+}
 
 function isoDate(date) {
   const y = date.getFullYear();
@@ -1643,6 +1687,8 @@ async function partShift(shiftId) {
     await loadTimesheets();
   } catch (err) { alert(err.message); }
 }
+
+setTimeout(syncDesktopTableScroll,0);
 
 async function approveShift(shiftId) {
   if (!confirm("Approve this shift?")) {
