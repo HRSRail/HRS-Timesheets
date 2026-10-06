@@ -1076,6 +1076,10 @@ function flattenTimesheets() {
         shift_rejection_reason:
           shift.rejection_reason || "",
         pay_status:shift.pay_status || "FULL SHIFT",
+        payroll_pay_grade:shift.payroll_pay_grade || "",
+        pay_grade_adjustment_reason:shift.pay_grade_adjustment_reason || "",
+        pay_grade_adjusted_by:shift.pay_grade_adjusted_by || "",
+        pay_grade_adjusted_at:shift.pay_grade_adjusted_at || "",
         shift_approved_by:shift.approved_by || "",
         shift_approved_at:shift.approved_at || "",
         extras_reviewed_by:shift.extras_reviewed_by || "",
@@ -1376,7 +1380,8 @@ function renderTable() {
         <div class="approval-actions">
           <button class="btn-approve btn-small" onclick="approveShift('${row.shift_id}')">APPROVE</button>
           ${partEligible ? `<button class="btn-small" style="background:#f0ad32;color:#202426;border:0;font-weight:800" onclick="partShift('${row.shift_id}')">PART SHIFT</button>` : ""}
-          <button class="btn-reject btn-small" onclick="rejectShift('${row.shift_id}')">REJECT</button>
+          <button class="btn-small" style="background:#dce8f4;color:#202426;border:0;font-weight:800" onclick="changePayGrade('${row.shift_id}','${row.grade}')">CHANGE PAY GRADE</button>
+          <button class="btn-reject btn-small" onclick="rejectShift('${row.shift_id}')">REJECT SHIFT – NO PAY</button>
           ${row.pay_status === "PART SHIFT" ? '<div style="margin-top:5px;font-weight:900;color:#a55d00">⚠ PART SHIFT PAY</div>' : ""}
         </div>
       `;
@@ -1389,7 +1394,8 @@ function renderTable() {
         </td>
 
         <td>
-          ${escapeHtml(row.grade)}
+          ${escapeHtml(row.payroll_pay_grade || row.grade)}
+          ${row.payroll_pay_grade ? '<div style="margin-top:4px;font-size:11px;font-weight:800;color:#a55d00">Submitted: '+escapeHtml(row.grade)+'</div>' : ""}
         </td>
 
         <td>
@@ -1698,6 +1704,21 @@ async function partShift(shiftId) {
 
 setTimeout(syncDesktopTableScroll,0);
 
+async function changePayGrade(shiftId,currentGrade) {
+  const newGrade=prompt("Enter the correct pay grade:\nGANGER / TRADE / SEMI SKILLED / LABOUR",currentGrade);
+  if(newGrade===null)return;
+  const grade=String(newGrade).trim().toUpperCase();
+  if(!["GANGER","TRADE","SEMI SKILLED","LABOUR"].includes(grade)){alert("Please enter GANGER, TRADE, SEMI SKILLED or LABOUR.");return}
+  const reason=prompt("Reason for pay grade change:");
+  if(reason===null)return;
+  if(!String(reason).trim()){alert("A reason is required.");return}
+  if(!confirm("Change this shift pay grade to "+grade+" and APPROVE the shift for payroll?"))return;
+  try{
+    await callAccountsFunction({action:"change_pay_grade",shift_id:shiftId,pay_grade:grade,reason:String(reason).trim()});
+    await loadTimesheets();
+  }catch(err){alert(err.message)}
+}
+
 async function approveShift(shiftId) {
   if (!confirm("Approve this shift?")) {
     return;
@@ -1894,7 +1915,11 @@ function excelRows(rows) {
       row.operative,
 
     "Pay Grade":
-      row.grade,
+      row.payroll_pay_grade || row.grade,
+
+    "Submitted Pay Grade": row.grade,
+    "Pay Grade Adjustment": row.payroll_pay_grade ? (row.grade + " → " + row.payroll_pay_grade) : "",
+    "Pay Grade Adjustment Reason": row.pay_grade_adjustment_reason || "",
 
     "NR Rail Week at Start":
       railWeekNumber(
