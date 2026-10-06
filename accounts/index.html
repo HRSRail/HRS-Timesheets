@@ -1076,6 +1076,7 @@ function flattenTimesheets() {
         shift_rejection_reason:
           shift.rejection_reason || "",
         pay_status:shift.pay_status || "FULL SHIFT",
+        part_shift_paid_hours:shift.part_shift_paid_hours ?? "",
         payroll_pay_grade:shift.payroll_pay_grade || "",
         payroll_shift_type:shift.payroll_shift_type || "",
         shift_type_adjustment_reason:shift.shift_type_adjustment_reason || "",
@@ -1378,8 +1379,7 @@ function renderTable() {
         if (mins <= 0) mins += 1440;
         return mins;
       })();
-      const partThreshold = row.type === "WEEKEND" ? 360 : 300;
-      const partEligible = row.type !== "ECO" && shiftMinutes < partThreshold;
+      const partEligible = row.type !== "ECO";
       const shiftActions = `
         <div class="approval-actions">
           <button class="btn-approve btn-small" onclick="approveShift('${row.shift_id}')">APPROVE</button>
@@ -1387,7 +1387,7 @@ function renderTable() {
           <button class="btn-small" style="background:#dce8f4;color:#202426;border:0;font-weight:800" onclick="changePayGrade('${row.shift_id}','${row.grade}')">CHANGE PAY GRADE</button>
           <button class="btn-small" style="background:#dce8f4;color:#202426;border:0;font-weight:800" onclick="changeShiftType('${row.shift_id}','${row.type}')">CHANGE SHIFT PATTERN</button>
           <button class="btn-reject btn-small" onclick="rejectShift('${row.shift_id}')">REJECT SHIFT – NO PAY</button>
-          ${row.pay_status === "PART SHIFT" ? '<div style="margin-top:5px;font-weight:900;color:#a55d00">⚠ PART SHIFT PAY</div>' : ""}
+          ${row.pay_status === "PART SHIFT" ? '<div style="margin-top:5px;font-weight:900;color:#a55d00">⚠ PART SHIFT PAY'+(row.part_shift_paid_hours!=="" ? " – "+escapeHtml(row.part_shift_paid_hours)+" HRS" : " – HOURS NOT RECORDED")+"</div>" : ""}
         </div>
       `;
 
@@ -1701,14 +1701,16 @@ async function resetTimesheet(timesheetId, operative, weekStart, weekEnd) {
 }
 
 async function partShift(shiftId) {
-  if (!confirm("Mark this as PART SHIFT PAY and approve it?")) return;
-  try {
-    await callAccountsFunction({action:"part_shift",shift_id:shiftId});
+  const value=prompt("How many hours are to be PAID for this part shift?");
+  if(value===null)return;
+  const hours=Number(String(value).trim());
+  if(!Number.isFinite(hours)||hours<=0||hours>24){alert("Enter valid paid hours greater than 0 and no more than 24.");return}
+  if(!confirm("Approve this as PART SHIFT and pay "+hours+" hours?"))return;
+  try{
+    await callAccountsFunction({action:"part_shift",shift_id:shiftId,paid_hours:hours});
     await loadTimesheets();
-  } catch (err) { alert(err.message); }
+  }catch(err){alert(err.message)}
 }
-
-setTimeout(syncDesktopTableScroll,0);
 
 async function changeShiftType(shiftId,currentType) {
   const newType=prompt("Enter the correct shift pattern:\nDAY / NIGHT / WEEKEND / ECO",currentType);
@@ -2041,6 +2043,9 @@ function excelRows(rows) {
 
     "Pay Status":
       row.pay_status,
+
+    "Part Shift Paid Hours":
+      row.part_shift_paid_hours,
 
     "Timesheet Status":
       row.timesheet_approval_status
