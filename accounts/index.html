@@ -1998,70 +1998,64 @@ function excelRows(rows) {
   }));
 }
 
-function downloadExcel(
-  rows,
-  filename,
-  sheetName
-) {
+function payrollSummaryRows(rows) {
+  const weeks = [...new Set(rows.map(r => r.week_start))].sort();
+  const map = new Map();
 
+  rows.forEach(r => {
+    const key = r.operative;
+    if (!map.has(key)) map.set(key,{operative:r.operative,grade:r.grade,weeks:{}});
+    const item=map.get(key);
+    if (!item.weeks[r.week_start]) item.weeks[r.week_start]={shifts:0,hotel:0,outZone:0,towing:0,yard:0,part:0};
+    const w=item.weeks[r.week_start];
+    if (r.shift_approval_status==="APPROVED") {
+      w.shifts++;
+      if(r.pay_status==="PART SHIFT") w.part++;
+      if(r.hotel && r.hotel_approval==="APPROVED") w.hotel++;
+      if(r.out_zone && r.out_zone_approval==="APPROVED") w.outZone++;
+      if(r.towing && r.towing_approval==="APPROVED") w.towing++;
+      if(r.yard && r.yard_approval==="APPROVED") w.yard++;
+    }
+  });
+
+  return [...map.values()].sort((a,b)=>a.operative.localeCompare(b.operative)).map(item=>{
+    const out={"Operative":item.operative,"Pay Grade":item.grade};
+    weeks.forEach((week,index)=>{
+      const w=item.weeks[week]||{shifts:0,hotel:0,outZone:0,towing:0,yard:0,part:0};
+      const label="Week "+(index+1)+" ("+formatDate(week)+")";
+      out[label+" - Approved Shifts"]=w.shifts;
+      out[label+" - Part Shifts"]=w.part;
+      out[label+" - Hotel Approved"]=w.hotel;
+      out[label+" - Out of Zone Approved"]=w.outZone;
+      out[label+" - Towing Approved"]=w.towing;
+      out[label+" - Yard Loading Approved"]=w.yard;
+    });
+    return out;
+  });
+}
+
+function downloadExcel(rows,filename,sheetName,includeSummary=false) {
   if (!rows.length) {
-    alert(
-      "There are no shifts to export."
-    );
+    alert("There are no approved shifts to export.");
     return;
   }
 
-  const ws =
-    XLSX.utils.json_to_sheet(
-      excelRows(rows)
-    );
+  const ws=XLSX.utils.json_to_sheet(excelRows(rows));
+  ws["!autofilter"]={ref:ws["!ref"]};
+  ws["!cols"]=Object.keys(excelRows(rows)[0]).map((key)=>({wch:Math.max(12,Math.min(34,key.length+4))}));
 
-  ws["!autofilter"] = {
-    ref:ws["!ref"]
-  };
+  const wb=XLSX.utils.book_new();
 
-  ws["!cols"] = [
-    {wch:24},
-    {wch:15},
-    {wch:20},
-    {wch:20},
-    {wch:20},
-    {wch:15},
-    {wch:16},
-    {wch:34},
-    {wch:10},
-    {wch:10},
-    {wch:13},
-    {wch:19},
-    {wch:19},
-    {wch:18},
-    {wch:16},
-    {wch:16},
-    {wch:16},
-    {wch:28},
-    {wch:28},
-    {wch:16},
-    {wch:27},
-    {wch:27},
-    {wch:18},
-    {wch:35},
-    {wch:18},
-    {wch:18}
-  ];
+  if(includeSummary){
+    const summary=payrollSummaryRows(rows);
+    const sws=XLSX.utils.json_to_sheet(summary);
+    sws["!autofilter"]={ref:sws["!ref"]};
+    sws["!cols"]=Object.keys(summary[0]||{}).map((key,i)=>({wch:i===0?24:i===1?15:24}));
+    XLSX.utils.book_append_sheet(wb,sws,"Payroll Summary");
+  }
 
-  const wb =
-    XLSX.utils.book_new();
-
-  XLSX.utils.book_append_sheet(
-    wb,
-    ws,
-    sheetName
-  );
-
-  XLSX.writeFile(
-    wb,
-    filename
-  );
+  XLSX.utils.book_append_sheet(wb,ws,sheetName);
+  XLSX.writeFile(wb,filename);
 }
 
 function rejectionRows(rows) {
@@ -2191,7 +2185,8 @@ $("fortnightExcelBtn")
         downloadExcel(
           rows,
           `HRS Rail Payroll - Payday ${payroll.payday}.xlsx`,
-          "Fortnightly Payroll"
+          "Fortnightly Payroll",
+          true
         );
 
       } catch (err) {
