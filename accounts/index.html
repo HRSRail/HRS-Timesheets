@@ -1077,6 +1077,10 @@ function flattenTimesheets() {
           shift.rejection_reason || "",
         pay_status:shift.pay_status || "FULL SHIFT",
         payroll_pay_grade:shift.payroll_pay_grade || "",
+        payroll_shift_type:shift.payroll_shift_type || "",
+        shift_type_adjustment_reason:shift.shift_type_adjustment_reason || "",
+        shift_type_adjusted_by:shift.shift_type_adjusted_by || "",
+        shift_type_adjusted_at:shift.shift_type_adjusted_at || "",
         pay_grade_adjustment_reason:shift.pay_grade_adjustment_reason || "",
         pay_grade_adjusted_by:shift.pay_grade_adjusted_by || "",
         pay_grade_adjusted_at:shift.pay_grade_adjusted_at || "",
@@ -1381,6 +1385,7 @@ function renderTable() {
           <button class="btn-approve btn-small" onclick="approveShift('${row.shift_id}')">APPROVE</button>
           ${partEligible ? `<button class="btn-small" style="background:#f0ad32;color:#202426;border:0;font-weight:800" onclick="partShift('${row.shift_id}')">PART SHIFT</button>` : ""}
           <button class="btn-small" style="background:#dce8f4;color:#202426;border:0;font-weight:800" onclick="changePayGrade('${row.shift_id}','${row.grade}')">CHANGE PAY GRADE</button>
+          <button class="btn-small" style="background:#dce8f4;color:#202426;border:0;font-weight:800" onclick="changeShiftType('${row.shift_id}','${row.type}')">CHANGE SHIFT PATTERN</button>
           <button class="btn-reject btn-small" onclick="rejectShift('${row.shift_id}')">REJECT SHIFT – NO PAY</button>
           ${row.pay_status === "PART SHIFT" ? '<div style="margin-top:5px;font-weight:900;color:#a55d00">⚠ PART SHIFT PAY</div>' : ""}
         </div>
@@ -1432,7 +1437,8 @@ function renderTable() {
         </td>
 
         <td>
-          ${escapeHtml(row.type)}
+          ${escapeHtml(row.payroll_shift_type || row.type)}
+          ${row.payroll_shift_type ? '<div style="margin-top:4px;font-size:11px;font-weight:800;color:#a55d00">Submitted: '+escapeHtml(row.type)+'</div>' : ""}
         </td>
 
         <td>
@@ -1704,6 +1710,21 @@ async function partShift(shiftId) {
 
 setTimeout(syncDesktopTableScroll,0);
 
+async function changeShiftType(shiftId,currentType) {
+  const newType=prompt("Enter the correct shift pattern:\nDAY / NIGHT / WEEKEND / ECO",currentType);
+  if(newType===null)return;
+  const type=String(newType).trim().toUpperCase();
+  if(!["DAY","NIGHT","WEEKEND","ECO"].includes(type)){alert("Please enter DAY, NIGHT, WEEKEND or ECO.");return}
+  const reason=prompt("Reason for shift pattern change:");
+  if(reason===null)return;
+  if(!String(reason).trim()){alert("A reason is required.");return}
+  if(!confirm("Change this shift pattern to "+type+" and APPROVE the shift for payroll?"))return;
+  try{
+    await callAccountsFunction({action:"change_shift_type",shift_id:shiftId,shift_type:type,reason:String(reason).trim()});
+    await loadTimesheets();
+  }catch(err){alert(err.message)}
+}
+
 async function changePayGrade(shiftId,currentGrade) {
   const newGrade=prompt("Enter the correct pay grade:\nGANGER / TRADE / SEMI SKILLED / LABOUR",currentGrade);
   if(newGrade===null)return;
@@ -1954,7 +1975,11 @@ function excelRows(rows) {
       row.finish,
 
     "Shift Type":
-      row.type,
+      row.payroll_shift_type || row.type,
+
+    "Submitted Shift Type": row.type,
+    "Shift Type Adjustment": row.payroll_shift_type ? (row.type + " → " + row.payroll_shift_type) : "",
+    "Shift Type Adjustment Reason": row.shift_type_adjustment_reason || "",
 
     "Out of Zone Claimed":
       yesNo(row.out_zone),
