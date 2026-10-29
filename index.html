@@ -240,21 +240,7 @@ function fmt(d){
    MONDAY-SUNDAY TIMESHEET WEEK
    ========================================================= */
 
-// Temporary one-off link for the week ending 25 October.
-// Expiry is based on UK time, not the operative's device timezone.
-const lateLinkRequested = new URLSearchParams(location.search).get("late") === "2026-10-19";
-const lateLinkValid = lateLinkRequested &&
-  new Date() < new Date("2026-10-26T23:59:59+00:00");
-
-if (lateLinkRequested && !lateLinkValid) {
-  document.addEventListener("DOMContentLoaded", () => {
-    document.body.innerHTML = '<main style="max-width:600px;margin:70px auto;padding:25px;font-family:Arial"><h2>Late timesheet link expired</h2><p>This one-off link expired at midnight on Monday 26 October 2026. Please contact HRS Accounts.</p></main>';
-  });
-}
-
 function currentTimesheetWeekStart(){
-
- if(lateLinkValid) return new Date('2026-10-19T12:00:00');
 
  const now=new Date();
 
