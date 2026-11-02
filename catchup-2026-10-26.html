@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HRS Rail – Previous Week Catch-up Timesheet</title>
+<title>HRS Rail – Previous Week Replacement Timesheet</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#f3f5f7;font-family:Arial,sans-serif;color:#17202a}
@@ -66,11 +66,11 @@ textarea{min-height:70px}
 
 <div class="head">
 <b>HRS RAIL</b>
-<div>Previous Week – Catch-up Timesheet</div>
+<div>Previous Week – Replacement Timesheet</div>
 <div class="deadline" id="payInfo"></div>
 </div>
 
-<div class="notice" style="margin-bottom:12px;border:1px solid #e8c56c"><strong>PREVIOUS WEEK ONLY: 26 October – 1 November 2026.</strong><br>For operatives who submitted too early. Enter only shifts that were missed from your original submission. Do not re-enter shifts already submitted, or they may be duplicated in Accounts.</div>
+<div class="notice" style="margin-bottom:12px;border:1px solid #e8c56c"><strong>PREVIOUS WEEK ONLY: 26 October – 1 November 2026.</strong><br>Complete a NEW FULL weekly timesheet with ALL shifts worked during this week. Your previously submitted incorrect timesheet must be deleted by Accounts from the management portal to prevent duplicate records.</div>
 <form id="form">
 
 <div class="card">
@@ -106,7 +106,7 @@ textarea{min-height:70px}
 <div class="card">
 <div class="confirm">
 <input id="confirm" type="checkbox">
-<label for="confirm" style="margin:0">I confirm these are only shifts missing from my original submission for 26/10/2026–01/11/2026.</label>
+<label for="confirm" style="margin:0">I confirm this is my complete replacement timesheet, including ALL shifts worked from 26/10/2026 to 01/11/2026.</label>
 </div>
 
 <div id="error" class="error"></div>
@@ -366,7 +366,7 @@ function payroll(){
  }
 
  document.getElementById('payInfo').textContent=
- `Catch-up for 26/10/2026–01/11/2026 • Original deadline: 02/11/2026 12:00`;
+ `Replacement for 26/10/2026–01/11/2026 • Original deadline: 02/11/2026 12:00`;
 }
 
 payroll();
